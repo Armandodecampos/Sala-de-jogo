@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby de Salas - Supabase</title>
+    <!-- Carrega o Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega o cliente Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Estilo para o spinner de carregamento */
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
+
+    <!-- Container Principal -->
+    <div class="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-xl relative">
+
+        <!-- Overlay de Carregamento -->
+        <div id="loading-overlay" class="absolute inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center rounded-lg z-50 hidden">
+            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
+        </div>
+
+        <!-- Título -->
+        <h1 class="text-3xl font-bold text-center mb-6 text-white">Lobby de Salas</h1>
+
+        <!-- #1: View de Autenticação -->
+        <div id="auth-view">
+            <!-- Abas de Login / Cadastro -->
+            <div class="flex mb-4 border-b border-gray-700">
+                <button id="tab-login" class="flex-1 py-2 text-center font-medium text-blue-400 border-b-2 border-blue-400">Login</button>
+                <button id="tab-signup" class="flex-1 py-2 text-center font-medium text-gray-400">Cadastrar</button>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input type="email" id="login-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="voce@email.com">
+                </div>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Entrar</button>
+            </form>
+
+            <!-- Formulário de Cadastro (escondido por padrão) -->
+            <form id="signup-form" class="hidden">
+                <div class="mb-4">
+                    <label for="signup-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input type="email" id="signup-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="voce@email.com">
+                </div>
+                <div class="mb-6">
+                    <label for="signup-password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
+                    <input type="password" id="signup-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Criar Conta</button>
+            </form>
+            
+            <!-- Mensagens de Auth -->
+            <p id="auth-message" class="text-center text-sm mt-4"></p>
+        </div>
+
+        <!-- #2: View do Lobby (Logado) -->
+        <div id="lobby-view" class="hidden">
+            <p id="welcome-message" class="text-center text-lg mb-6"></p>
+            
+            <!-- Criar Sala -->
+            <button id="create-room-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 mb-6 shadow-lg">
+                Criar Nova Sala
+            </button>
+            
+            <!-- Entrar na Sala -->
+            <form id="join-room-form">
+                <label for="room-code-input" class="block text-sm font-medium text-gray-300 mb-2">Entrar em uma Sala</label>
+                <div class="flex">
+                    <input type="text" id="room-code-input" required class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-l-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite o código">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-300">Entrar</button>
+                </div>
+            </form>
+            <p id="lobby-message" class="text-center text-red-400 text-sm mt-4"></p>
+
+            <!-- Logout -->
+            <button id="logout-btn" class="w-full mt-8 text-gray-400 hover:text-red-400 text-sm transition duration-300">Sair</button>
+        </div>
+
+        <!-- #3: View da Sala (Dentro da Sala) -->
+        <div id="room-view" class="hidden">
+            <!-- CONTEÚDO ATUALIZADO DA SALA -->
+            <h2 class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
+            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6"></p>
+            
+            <h3 class="text-lg font-semibold text-gray-300 mb-3">Quem está na sala:</h3>
+            <ul id="participants-list" class="list-disc list-inside bg-gray-900 p-4 rounded-lg min-h-[120px] text-gray-200 space-y-1">
+                <!-- Lista de participantes aparecerá aqui -->
+            </ul>
+            
+            <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6">Voltar ao Lobby</button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURAÇÃO DO SUPABASE ---
+        // POR FAVOR, SUBSTITUA PELAS SUAS CHAVES DO PROJETO SUPABASE
+        const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co'; // Cole sua URL aqui
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA'; // Cole sua Chave Anônima aqui
+
+        if (SUPABASE_URL === 'SEU_SUPABASE_URL' || SUPABASE_ANON_KEY === 'SUA_SUPABASE_ANON_KEY') {
+            document.getElementById('auth-view').innerHTML = `
+                <p class="text-center text-red-400">
+                    Por favor, configure sua URL e Chave Anônima do Supabase no topo do script no arquivo index.html.
+                </p>`;
+        }
+
+        const { createClient } = supabase;
+        const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- 2. REFERÊNCIAS DO DOM ---
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // Views
+        const authView = document.getElementById('auth-view');
+        const lobbyView = document.getElementById('lobby-view');
+        const roomView = document.getElementById('room-view');
+
+        // Abas de Auth
+        const tabLogin = document.getElementById('tab-login');
+        const tabSignup = document.getElementById('tab-signup');
+        
+        // Formulários
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const joinRoomForm = document.getElementById('join-room-form');
+
+        // Mensagens
+        const authMessage = document.getElementById('auth-message');
+        const lobbyMessage = document.getElementById('lobby-message');
+        const welcomeMessage = document.getElementById('welcome-message');
+
+        // Botões
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+
+        // Displays
+        const roomCodeDisplay = document.getElementById('room-code-display');
+        const roomCodeInput = document.getElementById('room-code-input');
+        const participantsList = document.getElementById('participants-list'); // Novo
+
+        // --- 3. ESTADO DA APLICAÇÃO ---
+        let currentUser = null;
+        let currentRoomChannel = null; // Novo: para rastrear o canal Realtime
+
+        // --- 4. FUNÇÕES AUXILIARES ---
+
+        /** Mostra/esconde o overlay de carregamento */
+        function toggleLoading(isLoading) {
+            loadingOverlay.classList.toggle('hidden', !isLoading);
+        }
+
+        /** Exibe uma mensagem de autenticação */
+        function showAuthMessage(message, isError = false) {
+            authMessage.textContent = message;
+            authMessage.className = isError ? 'text-center text-red-400 text-sm mt-4' : 'text-center text-green-400 text-sm mt-4';
+        }
+
+        /** Exibe uma mensagem do lobby */
+        function showLobbyMessage(message, isError = true) {
+            lobbyMessage.textContent = message;
+            lobbyMessage.className = isError ? 'text-center text-red-400 text-sm mt-4' : 'text-center text-green-400 text-sm mt-4';
+        }
+
+        /** Controla qual view principal é exibida */
+        function showView(viewId) {
+            authView.classList.add('hidden');
+            lobbyView.classList.add('hidden');
+            roomView.classList.add('hidden');
+            
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        /** Gera um código de sala aleatório de 6 caracteres */
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        // --- 5. LÓGICA DE AUTENTICAÇÃO ---
+
+        // Alternar abas de Login/Cadastro
+        tabLogin.addEventListener('click', () => {
+            loginForm.classList.remove('hidden');
+            signupForm.classList.add('hidden');
+            tabLogin.classList.add('text-blue-400', 'border-blue-400');
+            tabSignup.classList.remove('text-blue-400', 'border-blue-400');
+            tabSignup.classList.add('text-gray-400');
+            authMessage.textContent = '';
+        });
+
+        tabSignup.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            signupForm.classList.remove('hidden');
+            tabSignup.classList.add('text-blue-400', 'border-blue-400');
+            tabLogin.classList.remove('text-blue-400', 'border-blue-400');
+            tabLogin.classList.add('text-gray-400');
+            authMessage.textContent = '';
+        });
+
+        // Lidar com Cadastro
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            const { data, error } = await sb.auth.signUp({ email, password });
+
+            if (error) {
+                showAuthMessage(error.message, true);
+            } else {
+                showAuthMessage('Conta criada! Verifique seu email para confirmar.', false);
+                signupForm.reset();
+            }
+            toggleLoading(false);
+        });
+
+        // Lidar com Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                showAuthMessage(error.message, true);
+            } else {
+                // O listener onAuthStateChange cuidará da mudança de view
+                showAuthMessage('');
+                loginForm.reset();
+            }
+            toggleLoading(false);
+        });
+
+        // Lidar com Logout
+        logoutBtn.addEventListener('click', async () => {
+            toggleLoading(true);
+            await leaveRoomRealtime(); // Novo: Sair do canal antes do logout
+            await sb.auth.signOut();
+            toggleLoading(false);
+            // O listener onAuthStateChange cuidará da mudança de view
+        });
+
+        // --- 6. LÓGICA DAS SALAS (COM REALTIME) ---
+
+        /** Atualiza a lista de UI com os participantes */
+        function handlePresenceSync(newState) {
+            participantsList.innerHTML = ''; // Limpa a lista
+            
+            // Itera sobre o estado de presença
+            for (const id in newState) {
+                const presences = newState[id];
+                // Pegamos a primeira presença (pode haver múltiplas por aba)
+                if (presences.length > 0) {
+                    const email = presences[0].email || 'Usuário anônimo';
+                    const li = document.createElement('li');
+                    li.textContent = email;
+                    // Destaca o usuário atual
+                    if (id === currentUser?.id) {
+                        li.textContent += ' (Você)';
+                        li.classList.add('text-blue-300');
+                    }
+                    participantsList.appendChild(li);
+                }
+            }
+            if (participantsList.innerHTML === '') {
+                participantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
+            }
+        }
+
+        /** Entra em um canal Realtime da sala */
+        async function joinRoomRealtime(roomCode) {
+            if (!currentUser) return;
+            
+            // Limpa canal anterior, se houver
+            await leaveRoomRealtime(); 
+
+            // Cria um canal específico para a sala
+            // Usamos o ID do usuário como 'key' para o Presence
+            currentRoomChannel = sb.channel(`room:${roomCode}`, {
+                config: {
+                    presence: {
+                        key: currentUser.id,
+                    },
+                },
+            });
+
+            // Ouve o evento 'sync' do Presence
+            currentRoomChannel.on('presence', { event: 'sync' }, () => {
+                const newState = currentRoomChannel.presenceState();
+                handlePresenceSync(newState);
+            });
+
+            // Inscreve-se no canal
+            currentRoomChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Anuncia a presença do usuário atual com seu email
+                    await currentRoomChannel.track({
+                        email: currentUser.email,
+                        joined_at: new Date().toISOString(),
+                    });
+                }
+            });
+        }
+
+        /** Sai do canal Realtime atual */
+        async function leaveRoomRealtime() {
+            if (currentRoomChannel) {
+                try {
+                    await currentRoomChannel.untrack(); // Remove o usuário do Presence
+                    await sb.removeChannel(currentRoomChannel); // Desconecta do canal
+                } catch (error) {
+                    console.error('Erro ao sair do canal:', error);
+                }
+                currentRoomChannel = null;
+                participantsList.innerHTML = ''; // Limpa a lista da UI
+            }
+        }
+
+        // Criar Sala
+        createRoomBtn.addEventListener('click', async () => {
+            toggleLoading(true);
+            showLobbyMessage('', false);
+            const newCode = generateRoomCode();
+            
+            if (!currentUser) {
+                showLobbyMessage('Erro: Usuário não está logado.', true);
+                toggleLoading(false);
+                return;
+            }
+
+            // Insere a nova sala no banco de dados
+            const { data, error } = await sb
+                .from('rooms')
+                .insert({
+                    room_code: newCode,
+                    creator_id: currentUser.id
+                })
+                .select()
+                .single(); // .single() é importante para pegar o dado de volta
+
+            if (error) {
+                // Trata erro de código duplicado (raro, mas possível)
+                if (error.code === '23505') { // unique_violation
+                    showLobbyMessage('Erro ao criar sala, tente novamente.', true);
+                } else {
+                    showLobbyMessage(error.message, true);
+                }
+            } else if (data) {
+                // Sucesso
+                roomCodeDisplay.textContent = data.room_code;
+                showView('room-view');
+                joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
+            }
+            toggleLoading(false);
+        });
+
+        // Entrar na Sala
+        joinRoomForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+            showLobbyMessage('', false);
+            const code = roomCodeInput.value.toUpperCase().trim();
+
+            if (!code) {
+                showLobbyMessage('Por favor, insira um código.', true);
+                toggleLoading(false);
+                return;
+            }
+
+            // Verifica se a sala existe
+            const { data, error } = await sb
+                .from('rooms')
+                .select('room_code')
+                .eq('room_code', code)
+                .maybeSingle(); // .maybeSingle() retorna null se não encontrar, em vez de erro
+
+            if (error) {
+                showLobbyMessage(error.message, true);
+            } else if (data) {
+                // Sala encontrada
+                roomCodeDisplay.textContent = data.room_code;
+                showView('room-view');
+                joinRoomForm.reset();
+                joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
+            } else {
+                // Sala não encontrada
+                showLobbyMessage('Sala não encontrada. Verifique o código.', true);
+            }
+            toggleLoading(false);
+        });
+
+        // Sair da Sala (Voltar ao Lobby)
+        leaveRoomBtn.addEventListener('click', async () => {
+            await leaveRoomRealtime(); // Novo: Sai do canal Realtime
+            showView('lobby-view');
+            showLobbyMessage('', false); // Limpa mensagens de erro
+        });
+
+        // --- 7. INICIALIZAÇÃO E AUTENTICAÇÃO ---
+
+        /** Verifica a sessão do usuário ao carregar a página */
+        async function checkUserSession() {
+            toggleLoading(true);
+            const { data, error } = await sb.auth.getSession();
+            if (data.session) {
+                currentUser = data.session.user;
+                welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
+                showView('lobby-view');
+            } else {
+                currentUser = null;
+                showView('auth-view');
+            }
+            toggleLoading(false);
+        }
+
+        /** Ouve mudanças no estado de autenticação (login, logout) */
+        sb.auth.onAuthStateChange(async (event, session) => { // Tornou-se async
+            toggleLoading(true);
+            if (event === 'SIGNED_IN' && session) {
+                currentUser = session.user;
+                welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
+                showView('lobby-view');
+            } else if (event === 'SIGNED_OUT') {
+                await leaveRoomRealtime(); // Novo: Garante saída do canal no logout
+                currentUser = null;
+                showView('auth-view');
+            }
+            toggleLoading(false);
+        });
+        
+        // Novo: Garante que o usuário saia do canal se fechar a aba
+        window.addEventListener('beforeunload', () => {
+            if (currentRoomChannel) {
+                // Isso é "best-effort", pois o navegador pode não esperar
+                leaveRoomRealtime();
+            }
+        });
+
+        // Inicia a verificação da sessão ao carregar
+        checkUserSession();
+
+    </script>
+</body>
+</html>
+
