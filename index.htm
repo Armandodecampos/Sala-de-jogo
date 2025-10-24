@@ -71,7 +71,7 @@
                 </div>
                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Criar Conta</button>
             </form>
-            
+
             <!-- Mensagens de Auth -->
             <p id="auth-message" class="text-center text-sm mt-4"></p>
         </div>
@@ -79,12 +79,12 @@
         <!-- #2: View do Lobby (Logado) -->
         <div id="lobby-view" class="hidden">
             <p id="welcome-message" class="text-center text-lg mb-6"></p>
-            
+
             <!-- Criar Sala -->
             <button id="create-room-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 mb-6 shadow-lg">
                 Criar Nova Sala
             </button>
-            
+
             <!-- Entrar na Sala -->
             <form id="join-room-form">
                 <label for="room-code-input" class="block text-sm font-medium text-gray-300 mb-2">Entrar em uma Sala</label>
@@ -104,12 +104,12 @@
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
             <h2 class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
             <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6"></p>
-            
+
             <h3 class="text-lg font-semibold text-gray-300 mb-3">Quem está na sala:</h3>
             <ul id="participants-list" class="list-disc list-inside bg-gray-900 p-4 rounded-lg min-h-[120px] text-gray-200 space-y-1">
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
-            
+
             <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6">Voltar ao Lobby</button>
         </div>
 
@@ -117,15 +117,11 @@
 
     <script type="module">
         // --- 1. CONFIGURAÇÃO DO SUPABASE ---
-        // POR FAVOR, SUBSTITUA PELAS SUAS CHAVES DO PROJETO SUPABASE
-        const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co'; // Cole sua URL aqui
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA'; // Cole sua Chave Anônima aqui
+        const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA';
 
         if (SUPABASE_URL === 'SEU_SUPABASE_URL' || SUPABASE_ANON_KEY === 'SUA_SUPABASE_ANON_KEY') {
-            document.getElementById('auth-view').innerHTML = `
-                <p class="text-center text-red-400">
-                    Por favor, configure sua URL e Chave Anônima do Supabase no topo do script no arquivo index.html.
-                </p>`;
+            document.getElementById('auth-view').innerHTML = `<p class="text-center text-red-400">Por favor, configure sua URL e Chave Anônima do Supabase.</p>`;
         }
 
         const { createClient } = supabase;
@@ -133,395 +129,205 @@
 
         // --- 2. REFERÊNCIAS DO DOM ---
         const loadingOverlay = document.getElementById('loading-overlay');
-        
-        // Views
         const authView = document.getElementById('auth-view');
         const lobbyView = document.getElementById('lobby-view');
         const roomView = document.getElementById('room-view');
-
-        // Abas de Auth
         const tabLogin = document.getElementById('tab-login');
         const tabSignup = document.getElementById('tab-signup');
-        
-        // Formulários
         const loginForm = document.getElementById('login-form');
         const signupForm = document.getElementById('signup-form');
         const joinRoomForm = document.getElementById('join-room-form');
-
-        // Mensagens
         const authMessage = document.getElementById('auth-message');
         const lobbyMessage = document.getElementById('lobby-message');
         const welcomeMessage = document.getElementById('welcome-message');
-
-        // Botões
         const createRoomBtn = document.getElementById('create-room-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const leaveRoomBtn = document.getElementById('leave-room-btn');
-
-        // Displays
         const roomCodeDisplay = document.getElementById('room-code-display');
         const roomCodeInput = document.getElementById('room-code-input');
-        const participantsList = document.getElementById('participants-list'); // Novo
+        const participantsList = document.getElementById('participants-list');
 
         // --- 3. ESTADO DA APLICAÇÃO ---
         let currentUser = null;
-        let currentRoomChannel = null; // Novo: para rastrear o canal Realtime
+        let currentRoomChannel = null;
 
         // --- 4. FUNÇÕES AUXILIARES ---
-
-        /** Mostra/esconde o overlay de carregamento */
-        function toggleLoading(isLoading) {
-            loadingOverlay.classList.toggle('hidden', !isLoading);
-        }
-
-        /** Exibe uma mensagem de autenticação */
-        function showAuthMessage(message, isError = false) {
-            authMessage.textContent = message;
-            authMessage.className = isError ? 'text-center text-red-400 text-sm mt-4' : 'text-center text-green-400 text-sm mt-4';
-        }
-
-        /** Exibe uma mensagem do lobby */
-        function showLobbyMessage(message, isError = true) {
-            lobbyMessage.textContent = message;
-            lobbyMessage.className = isError ? 'text-center text-red-400 text-sm mt-4' : 'text-center text-green-400 text-sm mt-4';
-        }
-
-        /** Controla qual view principal é exibida */
+        function toggleLoading(isLoading) { loadingOverlay.classList.toggle('hidden', !isLoading); }
+        function showAuthMessage(message, isError = false) { authMessage.textContent = message; authMessage.className = `text-center text-sm mt-4 ${isError ? 'text-red-400' : 'text-green-400'}`; }
+        function showLobbyMessage(message, isError = true) { lobbyMessage.textContent = message; lobbyMessage.className = `text-center text-sm mt-4 ${isError ? 'text-red-400' : 'text-green-400'}`; }
         function showView(viewId) {
-            authView.classList.add('hidden');
-            lobbyView.classList.add('hidden');
-            roomView.classList.add('hidden');
-            
+            ['auth-view', 'lobby-view', 'room-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
         }
-
-        /** Gera um código de sala aleatório de 6 caracteres */
-        function generateRoomCode() {
-            return Math.random().toString(36).substring(2, 8).toUpperCase();
-        }
-
-        /** Salva a sala atual no perfil do usuário */
+        function generateRoomCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
         async function saveUserCurrentRoom(roomCode) {
             if (!currentUser) return;
-            // Usamos a tabela 'profiles' que o usuário deve ter criado
-            const { error } = await sb
-                .from('profiles')
-                .update({ last_room: roomCode })
-                .eq('id', currentUser.id);
-            if (error) {
-                console.error('Erro ao salvar sala no perfil:', error.message);
-            }
+            const { error } = await sb.from('profiles').update({ last_room: roomCode }).eq('id', currentUser.id);
+            if (error) console.error('Erro ao salvar sala no perfil:', error.message);
         }
-
-        /** Limpa a sala atual do perfil do usuário */
-        async function clearUserCurrentRoom() {
-            await saveUserCurrentRoom(null);
-        }
+        async function clearUserCurrentRoom() { await saveUserCurrentRoom(null); }
 
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
-
-        // Alternar abas de Login/Cadastro
         tabLogin.addEventListener('click', () => {
-            loginForm.classList.remove('hidden');
-            signupForm.classList.add('hidden');
-            tabLogin.classList.add('text-blue-400', 'border-blue-400');
-            tabSignup.classList.remove('text-blue-400', 'border-blue-400');
-            tabSignup.classList.add('text-gray-400');
+            loginForm.classList.remove('hidden'); signupForm.classList.add('hidden');
+            tabLogin.classList.add('text-blue-400', 'border-blue-400'); tabSignup.classList.remove('text-blue-400', 'border-blue-400');
             authMessage.textContent = '';
         });
-
         tabSignup.addEventListener('click', () => {
-            loginForm.classList.add('hidden');
-            signupForm.classList.remove('hidden');
-            tabSignup.classList.add('text-blue-400', 'border-blue-400');
-            tabLogin.classList.remove('text-blue-400', 'border-blue-400');
-            tabLogin.classList.add('text-gray-400');
+            signupForm.classList.remove('hidden'); loginForm.classList.add('hidden');
+            tabSignup.classList.add('text-blue-400', 'border-blue-400'); tabLogin.classList.remove('text-blue-400', 'border-blue-400');
             authMessage.textContent = '';
         });
 
-        // Lidar com Cadastro
         signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            toggleLoading(true);
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-
-            const { data, error } = await sb.auth.signUp({ email, password });
-
-            if (error) {
-                showAuthMessage(error.message, true);
-            } else {
-                showAuthMessage('Conta criada! Verifique seu email para confirmar.', false);
-                signupForm.reset();
-            }
+            e.preventDefault(); toggleLoading(true);
+            const { error } = await sb.auth.signUp({ email: signup-email.value, password: signup-password.value });
+            if (error) showAuthMessage(error.message, true);
+            else { showAuthMessage('Conta criada! Verifique seu email para confirmar.', false); signupForm.reset(); }
             toggleLoading(false);
         });
 
-        // Lidar com Login
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            toggleLoading(true);
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
-            if (error) {
-                showAuthMessage(error.message, true);
-            } else {
-                // O listener onAuthStateChange cuidará da mudança de view
-                showAuthMessage('');
-                loginForm.reset();
-            }
+            e.preventDefault(); toggleLoading(true);
+            const { error } = await sb.auth.signInWithPassword({ email: login-email.value, password: login-password.value });
+            if (error) showAuthMessage(error.message, true);
+            else { showAuthMessage(''); loginForm.reset(); }
             toggleLoading(false);
         });
 
-        // Lidar com Logout
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
-            await leaveRoomRealtime(); // Novo: Sair do canal antes do logout
+            await leaveRoomRealtime();
             await sb.auth.signOut();
             toggleLoading(false);
-            // O listener onAuthStateChange cuidará da mudança de view
         });
 
         // --- 6. LÓGICA DAS SALAS (COM REALTIME) ---
-
-        /** Atualiza a lista de UI com os participantes */
         function handlePresenceSync(newState) {
-            participantsList.innerHTML = ''; // Limpa a lista
-            
-            // Itera sobre o estado de presença
+            participantsList.innerHTML = '';
             for (const id in newState) {
                 const presences = newState[id];
-                // Pegamos a primeira presença (pode haver múltiplas por aba)
                 if (presences.length > 0) {
                     const email = presences[0].email || 'Usuário anônimo';
                     const li = document.createElement('li');
-                    li.textContent = email;
-                    // Destaca o usuário atual
-                    if (id === currentUser?.id) {
-                        li.textContent += ' (Você)';
-                        li.classList.add('text-blue-300');
-                    }
+                    li.textContent = email + (id === currentUser?.id ? ' (Você)' : '');
+                    if (id === currentUser?.id) li.classList.add('text-blue-300');
                     participantsList.appendChild(li);
                 }
             }
-            if (participantsList.innerHTML === '') {
-                participantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
-            }
+            if (participantsList.innerHTML === '') participantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
         }
 
-        /** Entra em um canal Realtime da sala */
         async function joinRoomRealtime(roomCode) {
             if (!currentUser) return;
-            
-            // Limpa canal anterior, se houver
-            await leaveRoomRealtime(); 
-
-            // Cria um canal específico para a sala
-            // Usamos o ID do usuário como 'key' para o Presence
-            currentRoomChannel = sb.channel(`room:${roomCode}`, {
-                config: {
-                    presence: {
-                        key: currentUser.id,
-                    },
-                },
-            });
-
-            // Ouve o evento 'sync' do Presence
-            currentRoomChannel.on('presence', { event: 'sync' }, () => {
-                const newState = currentRoomChannel.presenceState();
-                handlePresenceSync(newState);
-            });
-
-            // Inscreve-se no canal
+            await leaveRoomRealtime();
+            currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
+            currentRoomChannel.on('presence', { event: 'sync' }, () => handlePresenceSync(currentRoomChannel.presenceState()));
             currentRoomChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    // Anuncia a presença do usuário atual com seu email
-                    await currentRoomChannel.track({
-                        email: currentUser.email,
-                        joined_at: new Date().toISOString(),
-                    });
-                }
+                if (status === 'SUBSCRIBED') await currentRoomChannel.track({ email: currentUser.email, joined_at: new Date().toISOString() });
             });
         }
 
-        /** Sai do canal Realtime atual */
         async function leaveRoomRealtime() {
             if (currentRoomChannel) {
-                try {
-                    await currentRoomChannel.untrack(); // Remove o usuário do Presence
-                    await sb.removeChannel(currentRoomChannel); // Desconecta do canal
-                } catch (error) {
-                    console.error('Erro ao sair do canal:', error);
-                }
-                currentRoomChannel = null;
-                participantsList.innerHTML = ''; // Limpa a lista da UI
+                try { await currentRoomChannel.untrack(); await sb.removeChannel(currentRoomChannel); }
+                catch (error) { console.error('Erro ao sair do canal:', error); }
+                currentRoomChannel = null; participantsList.innerHTML = '';
             }
         }
 
-        // Criar Sala
         createRoomBtn.addEventListener('click', async () => {
-            toggleLoading(true);
-            showLobbyMessage('', false);
+            toggleLoading(true); showLobbyMessage('', false);
+            if (!currentUser) { showLobbyMessage('Erro: Usuário não está logado.', true); toggleLoading(false); return; }
             const newCode = generateRoomCode();
-            
-            if (!currentUser) {
-                showLobbyMessage('Erro: Usuário não está logado.', true);
-                toggleLoading(false);
-                return;
-            }
-
-            // Insere a nova sala no banco de dados
-            const { data, error } = await sb
-                .from('rooms')
-                .insert({
-                    room_code: newCode,
-                    creator_id: currentUser.id
-                })
-                .select()
-                .single(); // .single() é importante para pegar o dado de volta
-
+            const { data, error } = await sb.from('rooms').insert({ room_code: newCode, creator_id: currentUser.id }).select().single();
             if (error) {
-                // Trata erro de código duplicado (raro, mas possível)
-                if (error.code === '23505') { // unique_violation
-                    showLobbyMessage('Erro ao criar sala, tente novamente.', true);
-                } else {
-                    showLobbyMessage(error.message, true);
-                }
+                if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
+                else showLobbyMessage(error.message, true);
             } else if (data) {
-                // Sucesso
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
-                joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
-                saveUserCurrentRoom(data.room_code); // Salva no perfil
+                joinRoomRealtime(data.room_code);
+                saveUserCurrentRoom(data.room_code);
             }
             toggleLoading(false);
         });
 
-        // Entrar na Sala
         joinRoomForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            toggleLoading(true);
-            showLobbyMessage('', false);
+            e.preventDefault(); toggleLoading(true); showLobbyMessage('', false);
             const code = roomCodeInput.value.toUpperCase().trim();
-
-            if (!code) {
-                showLobbyMessage('Por favor, insira um código.', true);
-                toggleLoading(false);
-                return;
-            }
-
-            // Verifica se a sala existe
-            const { data, error } = await sb
-                .from('rooms')
-                .select('room_code')
-                .eq('room_code', code)
-                .maybeSingle(); // .maybeSingle() retorna null se não encontrar, em vez de erro
-
-            if (error) {
-                showLobbyMessage(error.message, true);
-            } else if (data) {
-                // Sala encontrada
+            if (!code) { showLobbyMessage('Por favor, insira um código.', true); toggleLoading(false); return; }
+            const { data, error } = await sb.from('rooms').select('room_code').eq('room_code', code).maybeSingle();
+            if (error) showLobbyMessage(error.message, true);
+            else if (data) {
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
                 joinRoomForm.reset();
-                joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
-                saveUserCurrentRoom(data.room_code); // Salva no perfil
-            } else {
-                // Sala não encontrada
-                showLobbyMessage('Sala não encontrada. Verifique o código.', true);
-            }
+                joinRoomRealtime(data.room_code);
+                saveUserCurrentRoom(data.room_code);
+            } else showLobbyMessage('Sala não encontrada. Verifique o código.', true);
             toggleLoading(false);
         });
 
-        // Sair da Sala (Voltar ao Lobby)
         leaveRoomBtn.addEventListener('click', async () => {
-            await leaveRoomRealtime(); // Novo: Sai do canal Realtime
-            clearUserCurrentRoom(); // Limpa do perfil
+            await leaveRoomRealtime();
+            clearUserCurrentRoom();
             showView('lobby-view');
-            showLobbyMessage('', false); // Limpa mensagens de erro
+            showLobbyMessage('', false);
         });
 
         // --- 7. INICIALIZAÇÃO E AUTENTICAÇÃO ---
-
-        /** Verifica a sessão do usuário ao carregar a página */
-        async function checkUserSession() {
-            toggleLoading(true);
-            const { data: { session } } = await sb.auth.getSession();
-
-            if (session) {
-                currentUser = session.user;
-                welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
-
-                // Busca o perfil do usuário para checar a última sala
-                const { data: profile, error: profileError } = await sb
-                    .from('profiles')
-                    .select('last_room')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (profileError) {
-                    console.error('Erro ao buscar perfil:', profileError.message);
-                    showView('lobby-view'); // Falla para o lobby por segurança
-                } else if (profile && profile.last_room) {
-                    const savedRoomCode = profile.last_room;
-                    // Verifica se a sala ainda existe
-                    const { data: roomData, error: roomError } = await sb
-                        .from('rooms')
-                        .select('room_code')
-                        .eq('room_code', savedRoomCode)
-                        .maybeSingle();
-
-                    if (roomData && !roomError) {
-                        // Sala válida, reconecta
-                        roomCodeDisplay.textContent = roomData.room_code;
-                        showView('room-view');
-                        joinRoomRealtime(roomData.room_code);
-                    } else {
-                        // Sala inválida, limpa e vai para o lobby
-                        await clearUserCurrentRoom();
-                        showView('lobby-view');
-                    }
+        async function handleUserLoggedIn(session) {
+            currentUser = session.user;
+            welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
+            const { data: profile, error } = await sb.from('profiles').select('last_room').eq('id', currentUser.id).single();
+            if (error) {
+                console.error('Erro ao buscar perfil:', error.message);
+                showView('lobby-view'); // Falha para o lobby por segurança
+                return;
+            }
+            if (profile && profile.last_room) {
+                const { data: roomData } = await sb.from('rooms').select('room_code').eq('room_code', profile.last_room).maybeSingle();
+                if (roomData) {
+                    roomCodeDisplay.textContent = roomData.room_code;
+                    showView('room-view');
+                    joinRoomRealtime(roomData.room_code);
                 } else {
-                    // Sem sala salva, vai para o lobby
+                    await clearUserCurrentRoom();
                     showView('lobby-view');
                 }
+            } else {
+                showView('lobby-view');
+            }
+        }
+
+        sb.auth.onAuthStateChange(async (event, session) => {
+            toggleLoading(true);
+            if (event === 'SIGNED_IN' && session) {
+                await handleUserLoggedIn(session);
+            } else if (event === 'SIGNED_OUT') {
+                await leaveRoomRealtime();
+                currentUser = null;
+                showView('auth-view');
+            }
+            toggleLoading(false);
+        });
+
+        window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
+
+        // Inicia a verificação da sessão ao carregar
+        (async () => {
+            toggleLoading(true);
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+                await handleUserLoggedIn(session);
             } else {
                 currentUser = null;
                 showView('auth-view');
             }
             toggleLoading(false);
-        }
-
-        /** Ouve mudanças no estado de autenticação (login, logout) */
-        sb.auth.onAuthStateChange(async (event, session) => { // Tornou-se async
-            toggleLoading(true);
-            if (event === 'SIGNED_IN' && session) {
-                currentUser = session.user;
-                welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
-                showView('lobby-view');
-            } else if (event === 'SIGNED_OUT') {
-                await leaveRoomRealtime(); // Novo: Garante saída do canal no logout
-                currentUser = null;
-                showView('auth-view');
-            }
-            toggleLoading(false);
-        });
-        
-        // Novo: Garante que o usuário saia do canal se fechar a aba
-        window.addEventListener('beforeunload', () => {
-            if (currentRoomChannel) {
-                // Isso é "best-effort", pois o navegador pode não esperar
-                leaveRoomRealtime();
-            }
-        });
-
-        // Inicia a verificação da sessão ao carregar
-        checkUserSession();
+        })();
 
     </script>
 </body>
 </html>
-
