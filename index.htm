@@ -200,6 +200,24 @@
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
+        /** Salva a sala atual no perfil do usuário */
+        async function saveUserCurrentRoom(roomCode) {
+            if (!currentUser) return;
+            // Usamos a tabela 'profiles' que o usuário deve ter criado
+            const { error } = await sb
+                .from('profiles')
+                .update({ last_room: roomCode })
+                .eq('id', currentUser.id);
+            if (error) {
+                console.error('Erro ao salvar sala no perfil:', error.message);
+            }
+        }
+
+        /** Limpa a sala atual do perfil do usuário */
+        async function clearUserCurrentRoom() {
+            await saveUserCurrentRoom(null);
+        }
+
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
 
         // Alternar abas de Login/Cadastro
@@ -262,6 +280,7 @@
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
             await leaveRoomRealtime(); // Novo: Sair do canal antes do logout
+            await clearUserCurrentRoom(); // Limpa do perfil
             await sb.auth.signOut();
             toggleLoading(false);
             // O listener onAuthStateChange cuidará da mudança de view
@@ -377,6 +396,7 @@
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
                 joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
+                saveUserCurrentRoom(data.room_code); // Salva no perfil
             }
             toggleLoading(false);
         });
@@ -409,6 +429,7 @@
                 showView('room-view');
                 joinRoomForm.reset();
                 joinRoomRealtime(data.room_code); // Novo: Entra no canal Realtime
+                saveUserCurrentRoom(data.room_code); // Salva no perfil
             } else {
                 // Sala não encontrada
                 showLobbyMessage('Sala não encontrada. Verifique o código.', true);
@@ -419,6 +440,7 @@
         // Sair da Sala (Voltar ao Lobby)
         leaveRoomBtn.addEventListener('click', async () => {
             await leaveRoomRealtime(); // Novo: Sai do canal Realtime
+            clearUserCurrentRoom(); // Limpa do perfil
             showView('lobby-view');
             showLobbyMessage('', false); // Limpa mensagens de erro
         });
@@ -428,11 +450,45 @@
         /** Verifica a sessão do usuário ao carregar a página */
         async function checkUserSession() {
             toggleLoading(true);
-            const { data, error } = await sb.auth.getSession();
-            if (data.session) {
-                currentUser = data.session.user;
+            const { data: { session } } = await sb.auth.getSession();
+
+            if (session) {
+                currentUser = session.user;
                 welcomeMessage.textContent = `Bem-vindo, ${currentUser.email}`;
-                showView('lobby-view');
+
+                // Busca o perfil do usuário para checar a última sala
+                const { data: profile, error: profileError } = await sb
+                    .from('profiles')
+                    .select('last_room')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Erro ao buscar perfil:', profileError.message);
+                    showView('lobby-view'); // Falla para o lobby por segurança
+                } else if (profile && profile.last_room) {
+                    const savedRoomCode = profile.last_room;
+                    // Verifica se a sala ainda existe
+                    const { data: roomData, error: roomError } = await sb
+                        .from('rooms')
+                        .select('room_code')
+                        .eq('room_code', savedRoomCode)
+                        .maybeSingle();
+
+                    if (roomData && !roomError) {
+                        // Sala válida, reconecta
+                        roomCodeDisplay.textContent = roomData.room_code;
+                        showView('room-view');
+                        joinRoomRealtime(roomData.room_code);
+                    } else {
+                        // Sala inválida, limpa e vai para o lobby
+                        await clearUserCurrentRoom();
+                        showView('lobby-view');
+                    }
+                } else {
+                    // Sem sala salva, vai para o lobby
+                    showView('lobby-view');
+                }
             } else {
                 currentUser = null;
                 showView('auth-view');
