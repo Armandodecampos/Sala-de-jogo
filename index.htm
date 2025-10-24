@@ -280,7 +280,6 @@
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
             await leaveRoomRealtime(); // Novo: Sair do canal antes do logout
-            await clearUserCurrentRoom(); // Limpa do perfil
             await sb.auth.signOut();
             toggleLoading(false);
             // O listener onAuthStateChange cuidará da mudança de view
