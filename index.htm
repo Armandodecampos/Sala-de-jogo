@@ -304,17 +304,25 @@
         // Único listener para o estado de autenticação. Ele lida com o login inicial (INITIAL_SESSION) e todas as mudanças.
         sb.auth.onAuthStateChange(async (event, session) => {
             toggleLoading(true);
-            // Se existe uma sessão, o usuário está logado.
-            if (session) {
-                await handleUserLoggedIn(session);
-            }
-            // Se não há sessão, o usuário está deslogado.
-            else {
-                await leaveRoomRealtime();
-                currentUser = null;
+            try {
+                // Se existe uma sessão, o usuário está logado.
+                if (session) {
+                    await handleUserLoggedIn(session);
+                }
+                // Se não há sessão, o usuário está deslogado.
+                else {
+                    await leaveRoomRealtime();
+                    currentUser = null;
+                    showView('auth-view');
+                }
+            } catch (error) {
+                console.error("Erro durante a mudança de estado de autenticação:", error);
+                // Garante que o usuário veja a tela de login se algo der errado
                 showView('auth-view');
+            } finally {
+                // Garante que o loading seja sempre desativado, mesmo com erros
+                toggleLoading(false);
             }
-            toggleLoading(false);
         });
 
         window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
