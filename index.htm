@@ -301,11 +301,15 @@
             }
         }
 
+        // Único listener para o estado de autenticação. Ele lida com o login inicial (INITIAL_SESSION) e todas as mudanças.
         sb.auth.onAuthStateChange(async (event, session) => {
             toggleLoading(true);
-            if (event === 'SIGNED_IN' && session) {
+            // Se existe uma sessão, o usuário está logado.
+            if (session) {
                 await handleUserLoggedIn(session);
-            } else if (event === 'SIGNED_OUT') {
+            }
+            // Se não há sessão, o usuário está deslogado.
+            else {
                 await leaveRoomRealtime();
                 currentUser = null;
                 showView('auth-view');
@@ -314,19 +318,6 @@
         });
 
         window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
-
-        // Inicia a verificação da sessão ao carregar
-        (async () => {
-            toggleLoading(true);
-            const { data: { session } } = await sb.auth.getSession();
-            if (session) {
-                await handleUserLoggedIn(session);
-            } else {
-                currentUser = null;
-                showView('auth-view');
-            }
-            toggleLoading(false);
-        })();
 
     </script>
 </body>
