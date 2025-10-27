@@ -100,7 +100,15 @@
         </div>
 
         <!-- #3: View da Sala (Dentro da Sala) -->
-        <div id="room-view" class="hidden">
+        <div id="room-view" class="hidden relative"> <!-- Adicionado 'relative' para posicionar o botão -->
+            <!-- Botão de Engrenagem (Configurações) -->
+            <button id="settings-btn" class="absolute top-0 left-0 mt-2 ml-2 text-gray-400 hover:text-white transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
             <h2 class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
             <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6"></p>
@@ -112,7 +120,36 @@
 
             <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6">Voltar ao Lobby</button>
         </div>
+    </div>
 
+    <!-- #4: Modal de Configurações da Sala -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm relative">
+            <!-- Botão de Fechar -->
+            <button id="close-modal-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold text-white text-center mb-4">Informação da Sala</h2>
+
+            <!-- Código da Sala -->
+            <div class="mb-4">
+                <p class="text-gray-400">Código da Sala:</p>
+                <p id="modal-room-code" class="text-2xl font-mono text-blue-400"></p>
+            </div>
+
+            <!-- Jogadores -->
+            <div class="mb-6">
+                <p class="text-gray-400">Jogadores:</p>
+                <ul id="modal-participants-list" class="text-white list-disc list-inside space-y-1 mt-1">
+                    <!-- Lista de jogadores no modal -->
+                </ul>
+            </div>
+
+            <!-- Botão de Sair -->
+            <button id="modal-logout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Sair</button>
+        </div>
     </div>
 
     <script type="module">
@@ -152,6 +189,14 @@
         const roomCodeDisplay = document.getElementById('room-code-display');
         const roomCodeInput = document.getElementById('room-code-input');
         const participantsList = document.getElementById('participants-list');
+        // Referências do Modal
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalRoomCode = document.getElementById('modal-room-code');
+        const modalParticipantsList = document.getElementById('modal-participants-list');
+        const modalLogoutBtn = document.getElementById('modal-logout-btn');
+
 
         // --- 3. ESTADO DA APLICAÇÃO ---
         let currentUser = null;
@@ -208,20 +253,48 @@
             toggleLoading(false);
         });
 
-        // --- 6. LÓGICA DAS SALAS (COM REALTIME) ---
+        // --- 6. LÓGICA DO MODAL ---
+        function openSettingsModal() {
+            modalRoomCode.textContent = roomCodeDisplay.textContent;
+            modalParticipantsList.innerHTML = participantsList.innerHTML;
+            settingsModal.classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.add('hidden');
+        }
+
+        settingsBtn.addEventListener('click', openSettingsModal);
+        closeModalBtn.addEventListener('click', closeSettingsModal);
+        modalLogoutBtn.addEventListener('click', () => {
+             // Reutiliza a mesma lógica do botão de logout original
+            logoutBtn.click();
+        });
+
+
+        // --- 7. LÓGICA DAS SALAS (COM REALTIME) ---
         function handlePresenceSync(newState) {
-            participantsList.innerHTML = '';
-            for (const id in newState) {
-                const presences = newState[id];
-                if (presences.length > 0) {
-                    const email = presences[0].email || 'Usuário anônimo';
-                    const li = document.createElement('li');
-                    li.textContent = email + (id === currentUser?.id ? ' (Você)' : '');
-                    if (id === currentUser?.id) li.classList.add('text-blue-300');
-                    participantsList.appendChild(li);
+            const listToUpdate = [participantsList, modalParticipantsList];
+
+            listToUpdate.forEach(list => {
+                list.innerHTML = ''; // Limpa a lista antes de atualizar
+                let hasParticipants = false;
+
+                for (const id in newState) {
+                    const presences = newState[id];
+                    if (presences.length > 0) {
+                        hasParticipants = true;
+                        const email = presences[0].email || 'Usuário anônimo';
+                        const li = document.createElement('li');
+                        li.textContent = email + (id === currentUser?.id ? ' (Você)' : '');
+                        if (id === currentUser?.id) li.classList.add('text-blue-300');
+                        list.appendChild(li);
+                    }
                 }
-            }
-            if (participantsList.innerHTML === '') participantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
+                if (!hasParticipants) {
+                    list.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
+                }
+            });
         }
 
         async function joinRoomRealtime(roomCode) {
