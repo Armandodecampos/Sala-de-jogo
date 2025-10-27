@@ -148,7 +148,7 @@
             </div>
 
             <!-- Botão de Sair -->
-            <button id="modal-logout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Sair</button>
+            <button id="modal-logout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Sair da sala</button>
         </div>
     </div>
 
@@ -290,8 +290,9 @@
         settingsBtn.addEventListener('click', openSettingsModal);
         closeModalBtn.addEventListener('click', closeSettingsModal);
         modalLogoutBtn.addEventListener('click', () => {
-             // Reutiliza a mesma lógica do botão de logout original
-            logoutBtn.click();
+            // Fecha o modal e aciona o evento de sair da sala
+            closeSettingsModal();
+            leaveRoomBtn.click();
         });
 
 
