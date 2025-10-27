@@ -25,10 +25,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
+<body id="page-body" class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
 
     <!-- Container Principal -->
-    <div class="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-xl relative">
+    <div id="main-container" class="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-xl relative">
 
         <!-- Overlay de Carregamento -->
         <div id="loading-overlay" class="absolute inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center rounded-lg z-50 hidden">
@@ -103,7 +103,7 @@
         <div id="room-view" class="hidden relative"> <!-- Adicionado 'relative' para posicionar o botão -->
             <!-- Botão de Engrenagem (Configurações) -->
             <button id="settings-btn" class="absolute top-0 left-0 mt-2 ml-2 text-gray-400 hover:text-white transition duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0- 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -189,6 +189,8 @@
         const roomCodeDisplay = document.getElementById('room-code-display');
         const roomCodeInput = document.getElementById('room-code-input');
         const participantsList = document.getElementById('participants-list');
+        const pageBody = document.getElementById('page-body');
+        const mainContainer = document.getElementById('main-container');
         // Referências do Modal
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
@@ -211,6 +213,22 @@
             document.getElementById(viewId).classList.remove('hidden');
         }
         function generateRoomCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
+
+        function setRoomViewMode(isFullScreen) {
+            if (isFullScreen) {
+                // Remove as classes que centralizam e limitam a largura
+                pageBody.classList.remove('flex', 'items-center', 'justify-center', 'min-h-screen');
+                mainContainer.classList.remove('max-w-md', 'p-8', 'rounded-lg', 'shadow-xl');
+                // Adiciona a classe para garantir que o contêiner ocupe toda a altura
+                mainContainer.classList.add('h-screen');
+            } else {
+                // Adiciona de volta as classes para centralizar e estilizar o contêiner
+                pageBody.classList.add('flex', 'items-center', 'justify-center', 'min-h-screen');
+                mainContainer.classList.add('max-w-md', 'p-8', 'rounded-lg', 'shadow-xl');
+                mainContainer.classList.remove('h-screen');
+            }
+        }
+
         async function saveUserCurrentRoom(roomCode) {
             if (!currentUser) return;
             const { error } = await sb.from('profiles').update({ last_room: roomCode }).eq('id', currentUser.id);
@@ -249,6 +267,7 @@
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
             await leaveRoomRealtime();
+            setRoomViewMode(false); // Sai do modo de tela cheia
             await sb.auth.signOut();
             toggleLoading(false);
         });
@@ -326,6 +345,7 @@
             } else if (data) {
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
+                setRoomViewMode(true); // Entra no modo de tela cheia
                 joinRoomRealtime(data.room_code);
                 saveUserCurrentRoom(data.room_code);
             }
@@ -341,6 +361,7 @@
             else if (data) {
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
+                setRoomViewMode(true); // Entra no modo de tela cheia
                 joinRoomForm.reset();
                 joinRoomRealtime(data.room_code);
                 saveUserCurrentRoom(data.room_code);
@@ -351,6 +372,7 @@
         leaveRoomBtn.addEventListener('click', async () => {
             await leaveRoomRealtime();
             clearUserCurrentRoom();
+            setRoomViewMode(false); // Sai do modo de tela cheia
             showView('lobby-view');
             showLobbyMessage('', false);
         });
@@ -370,6 +392,7 @@
                 if (roomData) {
                     roomCodeDisplay.textContent = roomData.room_code;
                     showView('room-view');
+                    setRoomViewMode(true); // Entra no modo de tela cheia ao recarregar
                     joinRoomRealtime(roomData.room_code);
                 } else {
                     await clearUserCurrentRoom();
@@ -392,6 +415,7 @@
                 else {
                     await leaveRoomRealtime();
                     currentUser = null;
+                    setRoomViewMode(false); // Garante que a visualização volte ao normal no logout
                     showView('auth-view');
                 }
             } catch (error) {
