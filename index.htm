@@ -181,7 +181,7 @@
 
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault(); toggleLoading(true);
-            const { error } = await sb.auth.signUp({ email: signup-email.value, password: signup-password.value });
+            const { error } = await sb.auth.signUp({ email: document.getElementById('signup-email').value, password: document.getElementById('signup-password').value });
             if (error) showAuthMessage(error.message, true);
             else { showAuthMessage('Conta criada! Verifique seu email para confirmar.', false); signupForm.reset(); }
             toggleLoading(false);
@@ -189,7 +189,7 @@
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); toggleLoading(true);
-            const { error } = await sb.auth.signInWithPassword({ email: login-email.value, password: login-password.value });
+            const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
             if (error) showAuthMessage(error.message, true);
             else { showAuthMessage(''); loginForm.reset(); }
             toggleLoading(false);
