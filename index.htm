@@ -36,7 +36,7 @@
         </div>
 
         <!-- Título -->
-        <h1 class="text-3xl font-bold text-center mb-6 text-white">Lobby de Salas</h1>
+        <h1 id="main-title" class="text-3xl font-bold text-center mb-6 text-white">Lobby de Salas</h1>
 
         <!-- #1: View de Autenticação -->
         <div id="auth-view">
@@ -100,7 +100,7 @@
         </div>
 
         <!-- #3: View da Sala (Dentro da Sala) -->
-        <div id="room-view" class="hidden relative"> <!-- Adicionado 'relative' para posicionar o botão -->
+        <div id="room-view" class="hidden relative h-full"> <!-- Adicionado 'relative' e 'h-full' para posicionar o botão -->
             <!-- Botão de Engrenagem (Configurações) -->
             <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-400 hover:text-white transition duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0- 0 24 24" stroke="currentColor">
@@ -191,6 +191,7 @@
         const participantsList = document.getElementById('participants-list');
         const pageBody = document.getElementById('page-body');
         const mainContainer = document.getElementById('main-container');
+        const mainTitle = document.getElementById('main-title');
         // Referências do Modal
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
@@ -209,6 +210,9 @@
         function showAuthMessage(message, isError = false) { authMessage.textContent = message; authMessage.className = `text-center text-sm mt-4 ${isError ? 'text-red-400' : 'text-green-400'}`; }
         function showLobbyMessage(message, isError = true) { lobbyMessage.textContent = message; lobbyMessage.className = `text-center text-sm mt-4 ${isError ? 'text-red-400' : 'text-green-400'}`; }
         function showView(viewId) {
+            // Oculta/mostra o título principal dependendo da view
+            mainTitle.classList.toggle('hidden', viewId === 'room-view');
+
             ['auth-view', 'lobby-view', 'room-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
         }
