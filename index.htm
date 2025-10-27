@@ -102,7 +102,7 @@
         <!-- #3: View da Sala (Dentro da Sala) -->
         <div id="room-view" class="hidden relative"> <!-- Adicionado 'relative' para posicionar o botão -->
             <!-- Botão de Engrenagem (Configurações) -->
-            <button id="settings-btn" class="absolute top-0 left-0 mt-2 ml-2 text-gray-400 hover:text-white transition duration-300">
+            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-400 hover:text-white transition duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0- 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -110,15 +110,15 @@
             </button>
 
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
-            <h2 class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
-            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6"></p>
+            <h2 class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
+            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6 hidden"></p>
 
-            <h3 class="text-lg font-semibold text-gray-300 mb-3">Quem está na sala:</h3>
-            <ul id="participants-list" class="list-disc list-inside bg-gray-900 p-4 rounded-lg min-h-[120px] text-gray-200 space-y-1">
+            <h3 class="text-lg font-semibold text-gray-300 mb-3 hidden">Quem está na sala:</h3>
+            <ul id="participants-list" class="list-disc list-inside bg-gray-900 p-4 rounded-lg min-h-[120px] text-gray-200 space-y-1 hidden">
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
 
-            <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6">Voltar ao Lobby</button>
+            <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6 hidden">Voltar ao Lobby</button>
         </div>
     </div>
 
