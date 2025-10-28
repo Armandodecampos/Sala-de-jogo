@@ -118,6 +118,9 @@
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
 
+            <!-- Controles do Jogo (Apenas para o Anfitrião) -->
+            <div id="game-controls" class="mt-6"></div>
+
             <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6 hidden">Voltar ao Lobby</button>
         </div>
     </div>
@@ -204,6 +207,8 @@
         // --- 3. ESTADO DA APLICAÇÃO ---
         let currentUser = null;
         let currentRoomChannel = null;
+        let currentRoom = null; // Armazena detalhes da sala atual { room_code, creator_id }
+        let gameStarted = false; // Controla se o jogo começou
 
         // --- 4. FUNÇÕES AUXILIARES ---
         function toggleLoading(isLoading) { loadingOverlay.classList.toggle('hidden', !isLoading); }
@@ -239,6 +244,43 @@
             if (error) console.error('Erro ao salvar sala no perfil:', error.message);
         }
         async function clearUserCurrentRoom() { await saveUserCurrentRoom(null); }
+
+        function renderRoomUI() {
+            if (!currentRoom || !currentUser) return;
+
+            const isHost = currentUser.id === currentRoom.creator_id;
+            const gameControlsContainer = document.getElementById('game-controls');
+
+            // Limpa os controles existentes
+            gameControlsContainer.innerHTML = '';
+
+            // Se o usuário for o anfitrião, exibe os controles do jogo
+            if (isHost) {
+                const gameButton = document.createElement('button');
+                gameButton.id = 'game-action-btn';
+                gameButton.textContent = gameStarted ? 'Finalizar Jogo' : 'Iniciar Jogo';
+                gameButton.className = `w-full font-bold py-2 px-4 rounded-lg transition duration-300 ${gameStarted ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`;
+
+                // Adiciona o event listener ao botão
+                gameButton.addEventListener('click', handleGameAction);
+
+                gameControlsContainer.appendChild(gameButton);
+            }
+        }
+
+        // --- 6. LÓGICA DE JOGO ---
+        async function handleGameAction() {
+            if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
+
+            const newState = !gameStarted;
+
+            // Envia uma mensagem para todos na sala para atualizar o estado do jogo
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_state_change',
+                payload: { gameStarted: newState },
+            });
+        }
 
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
         tabLogin.addEventListener('click', () => {
@@ -309,9 +351,14 @@
                     if (presences.length > 0) {
                         hasParticipants = true;
                         const email = presences[0].email || 'Usuário anônimo';
+                        const isHost = id === currentRoom?.creator_id;
+                        const isSelf = id === currentUser?.id;
+
                         const li = document.createElement('li');
-                        li.textContent = email + (id === currentUser?.id ? ' (Você)' : '');
-                        if (id === currentUser?.id) li.classList.add('text-blue-300');
+                        li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
+
+                        if (isSelf) li.classList.add('text-blue-300');
+
                         list.appendChild(li);
                     }
                 }
@@ -325,6 +372,13 @@
             if (!currentUser) return;
             await leaveRoomRealtime();
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
+
+            // Ouvinte para mudanças de estado de jogo
+            currentRoomChannel.on('broadcast', { event: 'game_state_change' }, ({ payload }) => {
+                gameStarted = payload.gameStarted;
+                renderRoomUI();
+            });
+
             currentRoomChannel.on('presence', { event: 'sync' }, () => handlePresenceSync(currentRoomChannel.presenceState()));
             currentRoomChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') await currentRoomChannel.track({ email: currentUser.email, joined_at: new Date().toISOString() });
@@ -348,11 +402,13 @@
                 if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
                 else showLobbyMessage(error.message, true);
             } else if (data) {
+                currentRoom = data; // Armazena todos os detalhes da sala
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
                 setRoomViewMode(true); // Entra no modo de tela cheia
                 joinRoomRealtime(data.room_code);
                 saveUserCurrentRoom(data.room_code);
+                renderRoomUI(); // Renderiza a UI da sala
             }
             toggleLoading(false);
         });
@@ -361,15 +417,17 @@
             e.preventDefault(); toggleLoading(true); showLobbyMessage('', false);
             const code = roomCodeInput.value.toUpperCase().trim();
             if (!code) { showLobbyMessage('Por favor, insira um código.', true); toggleLoading(false); return; }
-            const { data, error } = await sb.from('rooms').select('room_code').eq('room_code', code).maybeSingle();
+            const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
             if (error) showLobbyMessage(error.message, true);
             else if (data) {
+                currentRoom = data; // Armazena detalhes da sala
                 roomCodeDisplay.textContent = data.room_code;
                 showView('room-view');
                 setRoomViewMode(true); // Entra no modo de tela cheia
                 joinRoomForm.reset();
                 joinRoomRealtime(data.room_code);
                 saveUserCurrentRoom(data.room_code);
+                renderRoomUI(); // Renderiza a UI da sala
             } else showLobbyMessage('Sala não encontrada. Verifique o código.', true);
             toggleLoading(false);
         });
@@ -377,6 +435,12 @@
         leaveRoomBtn.addEventListener('click', async () => {
             await leaveRoomRealtime();
             clearUserCurrentRoom();
+
+            // Limpa o estado da sala e do jogo
+            currentRoom = null;
+            gameStarted = false;
+            document.getElementById('game-controls').innerHTML = ''; // Limpa os controles do anfitrião
+
             setRoomViewMode(false); // Sai do modo de tela cheia
             showView('lobby-view');
             showLobbyMessage('', false);
@@ -393,12 +457,14 @@
                 return;
             }
             if (profile && profile.last_room) {
-                const { data: roomData } = await sb.from('rooms').select('room_code').eq('room_code', profile.last_room).maybeSingle();
+                const { data: roomData } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', profile.last_room).maybeSingle();
                 if (roomData) {
+                    currentRoom = roomData; // Armazena detalhes da sala
                     roomCodeDisplay.textContent = roomData.room_code;
                     showView('room-view');
                     setRoomViewMode(true); // Entra no modo de tela cheia ao recarregar
                     joinRoomRealtime(roomData.room_code);
+                    renderRoomUI(); // Renderiza a UI da sala
                 } else {
                     await clearUserCurrentRoom();
                     showView('lobby-view');
