@@ -268,7 +268,7 @@
             }
         }
 
-        // --- 6. LÓGICA DE JOGO ---
+        // --- 6. LÓGICA DE JOGO E ANFITRIÃO ---
         async function handleGameAction() {
             if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
 
@@ -280,6 +280,47 @@
                 event: 'game_state_change',
                 payload: { gameStarted: newState },
             });
+        }
+
+        async function handleHostMigration() {
+            const presenceState = currentRoomChannel.presenceState();
+            const participants = [];
+            for (const id in presenceState) {
+                if (presenceState[id].length > 0) {
+                    participants.push({ id, ...presenceState[id][0] });
+                }
+            }
+
+            // Se não houver mais participantes, não faça nada
+            if (participants.length === 0) {
+                console.log('A sala está vazia. Nenhuma migração de anfitrião necessária.');
+                return;
+            }
+
+            // Ordene por data de entrada para encontrar o jogador mais antigo
+            participants.sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+
+            const newHost = participants[0];
+
+            // Apenas o novo anfitrião deve atualizar o banco de dados para evitar corridas
+            if (currentUser.id === newHost.id) {
+                console.log(`Você é o novo anfitrião (${newHost.email}). Atualizando o banco de dados.`);
+                const { error } = await sb.from('rooms')
+                    .update({ creator_id: newHost.id })
+                    .eq('room_code', currentRoom.room_code);
+
+                if (error) {
+                    console.error('Erro ao atualizar o anfitrião no banco de dados:', error.message);
+                } else {
+                    console.log('Anfitrião atualizado com sucesso no banco de dados.');
+                    // Transmita a mudança de anfitrião para todos os clientes
+                    await currentRoomChannel.send({
+                        type: 'broadcast',
+                        event: 'host_change',
+                        payload: { newHostId: newHost.id },
+                    });
+                }
+            }
         }
 
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
@@ -379,7 +420,28 @@
                 renderRoomUI();
             });
 
+            // Novo: Ouvinte para mudanças de anfitrião
+            currentRoomChannel.on('broadcast', { event: 'host_change' }, ({ payload }) => {
+                if (currentRoom) {
+                    currentRoom.creator_id = payload.newHostId;
+                    console.log(`Novo anfitrião recebido: ${payload.newHostId}`);
+                    // Re-renderize a UI da sala e a lista de participantes
+                    handlePresenceSync(currentRoomChannel.presenceState());
+                    renderRoomUI();
+                }
+            });
+
             currentRoomChannel.on('presence', { event: 'sync' }, () => handlePresenceSync(currentRoomChannel.presenceState()));
+
+            // Novo: Ouvinte para detectar quando um jogador sai
+            currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                // A 'key' é o ID do usuário que saiu
+                if (key === currentRoom.creator_id) {
+                    console.log('O anfitrião saiu da sala. Iniciando a migração de anfitrião...');
+                    handleHostMigration();
+                }
+            });
+
             currentRoomChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') await currentRoomChannel.track({ email: currentUser.email, joined_at: new Date().toISOString() });
             });
