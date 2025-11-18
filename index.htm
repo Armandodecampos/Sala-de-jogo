@@ -23,6 +23,41 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Estilos para as cartas */
+        .card {
+            width: 60px;
+            height: 90px;
+            background-color: #4a5568; /* gray-700 */
+            border: 2px solid #2d3748; /* gray-800 */
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            font-size: 10px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .card .name {
+            font-weight: bold;
+        }
+        .card .power {
+            align-self: flex-end;
+            font-weight: bold;
+        }
+        .field-slot {
+            width: 64px;
+            height: 94px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 2px dashed #4a5568; /* gray-600 */
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body id="page-body" class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
@@ -122,6 +157,27 @@
             <div id="game-controls" class="mt-6"></div>
 
             <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6 hidden">Voltar ao Lobby</button>
+
+            <!-- UI do Jogo de Cartas (escondido por padrão) -->
+            <div id="game-board" class="hidden w-full h-full bg-gray-900 flex flex-col p-4">
+                <!-- Área do Oponente -->
+                <div id="opponent-area" class="flex-1 flex justify-around items-center bg-gray-800 rounded-lg p-2 mb-4">
+                    <div id="opponent-hand" class="flex space-x-2"></div>
+                    <div id="opponent-deck" class="w-16 h-24 bg-red-800 rounded-lg flex items-center justify-center text-white">Deck</div>
+                    <div id="opponent-field" class="flex space-x-2"></div>
+                </div>
+
+                <!-- Área Central / Campo de Batalha -->
+                <div id="turn-indicator" class="flex-grow flex justify-center items-center">
+                </div>
+
+                <!-- Área do Jogador -->
+                <div id="player-area" class="flex-1 flex justify-around items-center bg-gray-800 rounded-lg p-2 mt-4">
+                    <div id="player-field" class="flex space-x-2"></div>
+                    <div id="player-deck" class="w-16 h-24 bg-blue-800 rounded-lg flex items-center justify-center text-white">Deck</div>
+                    <div id="player-hand" class="flex space-x-2"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -156,6 +212,8 @@
     </div>
 
     <script type="module">
+        import { createInitialGameState } from './game-state.js';
+
         // --- 1. CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA';
@@ -209,6 +267,7 @@
         let currentRoomChannel = null;
         let currentRoom = null; // Armazena detalhes da sala atual { room_code, creator_id }
         let gameStarted = false; // Controla se o jogo começou
+        let gameState = null; // Armazena o estado do jogo
 
         // --- 4. FUNÇÕES AUXILIARES ---
         function toggleLoading(isLoading) { loadingOverlay.classList.toggle('hidden', !isLoading); }
@@ -379,9 +438,274 @@
         });
 
 
+        // --- 6. LÓGICA DE JOGO E ANFITRIÃO ---
+        function renderGameBoard() {
+            if (!gameState || !currentUser) return;
+
+            document.getElementById('game-board').classList.remove('hidden');
+            // Esconde os elementos de lobby que não são necessários durante o jogo
+            ['room-code-display', 'participants-list', 'game-controls', 'leave-room-btn'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const playerState = gameState.players[currentUser.id];
+            const opponentId = Object.keys(gameState.players).find(id => id !== currentUser.id);
+            const opponentState = opponentId ? gameState.players[opponentId] : { hand: [], field: [], deck: [] };
+
+            // Renderiza a mão do jogador
+            const playerHand = document.getElementById('player-hand');
+            playerHand.innerHTML = ''; // Limpa a mão antes de renderizar
+            playerState.hand.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.innerHTML = `<span class="name">${card.name}</span><span class="power">${card.attack}/${card.defense}</span>`;
+                // Adiciona o evento de clique para jogar a carta
+                cardEl.addEventListener('click', () => playCard(card.id));
+                playerHand.appendChild(cardEl);
+            });
+
+            // Renderiza o campo do jogador
+            const playerField = document.getElementById('player-field');
+            playerField.innerHTML = playerState.field.map(card => `
+                <div class="card">
+                    <span class="name">${card.name}</span>
+                    <span class="power">${card.attack}/${card.defense}</span>
+                </div>
+            `).join('');
+
+            // Renderiza a mão do oponente (virada para baixo)
+            const opponentHand = document.getElementById('opponent-hand');
+            opponentHand.innerHTML = opponentState.hand.map(() => `<div class="card bg-gray-600"></div>`).join('');
+
+            // Renderiza o campo do oponente
+            const opponentField = document.getElementById('opponent-field');
+            opponentField.innerHTML = opponentState.field.map(card => `
+                <div class="card">
+                    <span class="name">${card.name}</span>
+                    <span class="power">${card.attack}/${card.defense}</span>
+                </div>
+            `).join('');
+
+            // Atualiza a contagem dos decks
+            document.getElementById('player-deck').textContent = `Deck (${playerState.deck.length})`;
+            document.getElementById('opponent-deck').textContent = `Deck (${opponentState.deck.length})`;
+
+            // Botão de passar o turno
+            const passTurnBtn = document.createElement('button');
+            passTurnBtn.textContent = 'Passar Turno';
+            passTurnBtn.className = 'bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded';
+            passTurnBtn.onclick = passTurn;
+
+            const turnIndicatorContainer = document.getElementById('turn-indicator');
+            turnIndicatorContainer.innerHTML = ''; // Limpa antes de adicionar
+
+            // Atualiza o indicador de turno
+            const turnIndicator = document.createElement('p');
+            if (gameState.currentPlayer === currentUser.id) {
+                turnIndicator.textContent = "É a sua vez!";
+                turnIndicator.classList.add('text-green-400');
+                turnIndicator.classList.remove('text-red-400');
+            } else {
+                turnIndicator.textContent = "Vez do oponente";
+                turnIndicator.classList.remove('text-green-400');
+                turnIndicator.classList.add('text-red-400');
+            }
+
+            turnIndicatorContainer.appendChild(turnIndicator);
+            if (gameState.currentPlayer === currentUser.id) {
+                turnIndicatorContainer.appendChild(passTurnBtn);
+            }
+        }
+
+        async function playCard(cardId) {
+            if (gameState.currentPlayer !== currentUser.id) {
+                alert("Não é a sua vez!");
+                return;
+            }
+
+            const playerState = gameState.players[currentUser.id];
+            const cardIndex = playerState.hand.findIndex(c => c.id === cardId);
+            if (cardIndex > -1) {
+                const card = playerState.hand.splice(cardIndex, 1)[0];
+                playerState.field.push(card);
+
+                // Envia a atualização para o oponente
+                await currentRoomChannel.send({
+                    type: 'broadcast',
+                    event: 'game_update',
+                    payload: { gameState },
+                });
+
+                // Renderiza o tabuleiro localmente
+                renderGameBoard();
+            }
+        }
+
+        async function passTurn() {
+            if (gameState.currentPlayer !== currentUser.id) {
+                alert("Não é a sua vez!");
+                return;
+            }
+
+            // Troca o jogador atual
+            const opponentId = Object.keys(gameState.players).find(id => id !== currentUser.id);
+            gameState.currentPlayer = opponentId;
+            gameState.turn++;
+
+            // O jogador que recebe o turno compra uma carta
+            const opponentState = gameState.players[opponentId];
+            if (opponentState.deck.length > 0) {
+                opponentState.hand.push(opponentState.deck.pop());
+            }
+
+
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_update',
+                payload: { gameState },
+            });
+            renderGameBoard(); // Re-renderiza para mostrar o turno do oponente
+        }
+
+        async function startGame(player1Id, player2Id) {
+            // Apenas o anfitrião (criador da sala) pode iniciar o jogo
+            if (currentUser.id !== currentRoom.creator_id) return;
+
+            console.log("Iniciando o jogo...");
+            gameStarted = true;
+            const initialState = createInitialGameState(player1Id, player2Id);
+
+            // Envia o estado inicial para todos os jogadores na sala
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_start',
+                payload: { gameState: initialState },
+            });
+        }
+
+        async function handleGameAction() {
+            if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
+
+            const newState = !gameStarted;
+
+            // Envia uma mensagem para todos na sala para atualizar o estado do jogo
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_state_change',
+                payload: { gameStarted: newState },
+            });
+        }
+
+        async function handleHostMigration() {
+            const presenceState = currentRoomChannel.presenceState();
+            const participants = [];
+            for (const id in presenceState) {
+                if (presenceState[id].length > 0) {
+                    participants.push({ id, ...presenceState[id][0] });
+                }
+            }
+
+            // Se não houver mais participantes, não faça nada
+            if (participants.length === 0) {
+                console.log('A sala está vazia. Nenhuma migração de anfitrião necessária.');
+                return;
+            }
+
+            // Ordene por data de entrada para encontrar o jogador mais antigo
+            participants.sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+
+            const newHost = participants[0];
+
+            // Apenas o novo anfitrião deve atualizar o banco de dados para evitar corridas
+            if (currentUser.id === newHost.id) {
+                console.log(`Você é o novo anfitrião (${newHost.email}). Atualizando o banco de dados.`);
+                const { error } = await sb.from('rooms')
+                    .update({ creator_id: newHost.id })
+                    .eq('room_code', currentRoom.room_code);
+
+                if (error) {
+                    console.error('Erro ao atualizar o anfitrião no banco de dados:', error.message);
+                } else {
+                    console.log('Anfitrião atualizado com sucesso no banco de dados.');
+                    // Transmita a mudança de anfitrião para todos os clientes
+                    await currentRoomChannel.send({
+                        type: 'broadcast',
+                        event: 'host_change',
+                        payload: { newHostId: newHost.id },
+                    });
+                }
+            }
+        }
+
+        // --- 5. LÓGICA DE AUTENTICAÇÃO ---
+        tabLogin.addEventListener('click', () => {
+            loginForm.classList.remove('hidden'); signupForm.classList.add('hidden');
+            tabLogin.classList.add('text-blue-400', 'border-blue-400'); tabSignup.classList.remove('text-blue-400', 'border-blue-400');
+            authMessage.textContent = '';
+        });
+        tabSignup.addEventListener('click', () => {
+            signupForm.classList.remove('hidden'); loginForm.classList.add('hidden');
+            tabSignup.classList.add('text-blue-400', 'border-blue-400'); tabLogin.classList.remove('text-blue-400', 'border-blue-400');
+            authMessage.textContent = '';
+        });
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); toggleLoading(true);
+            const { error } = await sb.auth.signUp({ email: document.getElementById('signup-email').value, password: document.getElementById('signup-password').value });
+            if (error) showAuthMessage(error.message, true);
+            else { showAuthMessage('Conta criada! Verifique seu email para confirmar.', false); signupForm.reset(); }
+            toggleLoading(false);
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); toggleLoading(true);
+            const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
+            if (error) showAuthMessage(error.message, true);
+            else { showAuthMessage(''); loginForm.reset(); }
+            toggleLoading(false);
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            toggleLoading(true);
+            await leaveRoomRealtime();
+            setRoomViewMode(false); // Sai do modo de tela cheia
+            await sb.auth.signOut();
+            toggleLoading(false);
+        });
+
+        // --- 6. LÓGICA DO MODAL ---
+        function openSettingsModal() {
+            modalRoomCode.textContent = roomCodeDisplay.textContent;
+            modalParticipantsList.innerHTML = participantsList.innerHTML;
+            settingsModal.classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.add('hidden');
+        }
+
+        settingsBtn.addEventListener('click', openSettingsModal);
+        closeModalBtn.addEventListener('click', closeSettingsModal);
+        modalLogoutBtn.addEventListener('click', () => {
+            // Fecha o modal e aciona o evento de sair da sala
+            closeSettingsModal();
+            leaveRoomBtn.click();
+        });
+
+
         // --- 7. LÓGICA DAS SALAS (COM REALTIME) ---
         function handlePresenceSync(newState) {
             const listToUpdate = [participantsList, modalParticipantsList];
+            const participants = Object.keys(newState);
+
+            if (participants.length === 2 && !gameStarted && currentUser.id === currentRoom.creator_id) {
+                const player1Id = currentRoom.creator_id;
+                const player2Id = participants.find(id => id !== player1Id);
+                if (player2Id) {
+                    startGame(player1Id, player2Id);
+                }
+            }
 
             listToUpdate.forEach(list => {
                 list.innerHTML = ''; // Limpa a lista antes de atualizar
@@ -414,10 +738,25 @@
             await leaveRoomRealtime();
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
 
+            // Ouvinte para o início do jogo
+            currentRoomChannel.on('broadcast', { event: 'game_start' }, ({ payload }) => {
+                console.log('Evento game_start recebido', payload);
+                gameState = payload.gameState;
+                gameStarted = true;
+                renderGameBoard();
+            });
+
             // Ouvinte para mudanças de estado de jogo
             currentRoomChannel.on('broadcast', { event: 'game_state_change' }, ({ payload }) => {
                 gameStarted = payload.gameStarted;
                 renderRoomUI();
+            });
+
+            // Ouvinte para atualizações do estado do jogo
+            currentRoomChannel.on('broadcast', { event: 'game_update' }, ({ payload }) => {
+                console.log('game_update recebido', payload);
+                gameState = payload.gameState;
+                renderGameBoard();
             });
 
             // Novo: Ouvinte para mudanças de anfitrião
