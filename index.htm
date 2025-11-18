@@ -104,7 +104,7 @@
         <div id="room-view" class="hidden relative h-full"> <!-- Adicionado 'relative' e 'h-full' para posicionar o botão -->
             <!-- Botão de Engrenagem (Configurações) -->
             <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-400 hover:text-white transition duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0- 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -121,6 +121,68 @@
 
             <!-- Controles do Jogo (Apenas para o Anfitrião) -->
             <div id="game-controls" class="mt-6"></div>
+
+            <!-- Tela do Jogo (Dado do Mentiroso) -->
+            <div id="game-view" class="hidden mt-6 text-center">
+                <!-- Informações do Jogo -->
+                <div id="game-info" class="mb-4 p-4 bg-gray-900 rounded-lg">
+                    <p class="text-lg">Rodada <span id="round-number">1</span></p>
+                    <div id="current-bid-display" class="my-2">
+                        <p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>
+                    </div>
+                    <p class="text-sm">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
+                </div>
+
+                <!-- Lista de Jogadores -->
+                <div id="game-players-list" class="mb-4 grid grid-cols-2 gap-2 text-sm">
+                    <!-- Ex: <div class="p-2 bg-gray-700 rounded">Player1@email.com (5 dados)</div> -->
+                </div>
+
+                <!-- Dados do Jogador Atual -->
+                <div id="my-dice-area" class="mb-4 p-4 bg-gray-900 rounded-lg">
+                    <h3 class="font-bold mb-2">Seus Dados</h3>
+                    <div id="my-dice-display" class="flex justify-center items-center space-x-2 text-2xl">
+                        <!-- Ex: <span>&#9856;</span> <span>&#9857;</span> ... -->
+                    </div>
+                </div>
+
+                <!-- Ações do Jogador -->
+                <div id="game-actions" class="space-y-4">
+                    <!-- Formulário de Lance -->
+                    <form id="bid-form" class="flex items-center justify-center gap-2">
+                        <label for="bid-quantity" class="sr-only">Quantidade</label>
+                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-gray-700 text-white p-2 rounded" />
+                        <label for="bid-face" class="sr-only">Face do Dado</label>
+                        <select id="bid-face" class="w-24 bg-gray-700 text-white p-2 rounded">
+                            <option value="1">⚀ (1)</option>
+                            <option value="2">⚁ (2)</option>
+                            <option value="3">⚂ (3)</option>
+                            <option value="4">⚃ (4)</option>
+                            <option value="5">⚄ (5)</option>
+                            <option value="6">⚅ (6)</option>
+                        </select>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded">Apostar</button>
+                    </form>
+                    <!-- Botão de Desafio -->
+                    <button id="challenge-btn" class="w-full bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded" disabled>Duvidar!</button>
+                </div>
+
+                <!-- Overlay de Resultado da Rodada -->
+                <div id="round-result-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-90 flex-col items-center justify-center hidden p-4">
+                    <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
+                    <div id="all-dice-reveal" class="mb-4">
+                        <!-- Dados de todos os jogadores serão mostrados aqui -->
+                    </div>
+                    <button id="next-round-btn" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded">Próxima Rodada</button>
+                </div>
+
+                 <!-- Overlay de Fim de Jogo -->
+                 <div id="game-over-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
+                    <h2 id="winner-message" class="text-3xl font-bold text-yellow-400 mb-4"></h2>
+                    <p class="mb-6">O jogo terminou.</p>
+                    <button id="back-to-lobby-btn" class="bg-indigo-600 hover:bg-indigo-700 font-bold py-2 px-6 rounded">Voltar para o Lobby</button>
+                </div>
+            </div>
 
             <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6 hidden">Voltar ao Lobby</button>
         </div>
@@ -157,6 +219,7 @@
     </div>
 
     <script type="module">
+        import { createInitialGameState } from './game-state.js';
         // --- 1. CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA';
@@ -203,13 +266,20 @@
         const modalRoomCode = document.getElementById('modal-room-code');
         const modalParticipantsList = document.getElementById('modal-participants-list');
         const modalLogoutBtn = document.getElementById('modal-logout-btn');
-
+        // Referências da UI do Jogo
+        const gameView = document.getElementById('game-view');
+        const bidForm = document.getElementById('bid-form');
+        const challengeBtn = document.getElementById('challenge-btn');
+        const nextRoundBtn = document.getElementById('next-round-btn');
+        const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 
         // --- 3. ESTADO DA APLICAÇÃO ---
         let currentUser = null;
         let currentRoomChannel = null;
         let currentRoom = null; // Armazena detalhes da sala atual { room_code, creator_id }
         let gameStarted = false; // Controla se o jogo começou
+        let gameState = null; // Armazena o estado completo do jogo
+        let presences = {}; // Armazena o estado de presença para mapear IDs para e-mails
 
         // --- 4. FUNÇÕES AUXILIARES ---
         function toggleLoading(isLoading) { loadingOverlay.classList.toggle('hidden', !isLoading); }
@@ -251,21 +321,34 @@
 
             const isHost = currentUser.id === currentRoom.creator_id;
             const gameControlsContainer = document.getElementById('game-controls');
-
-            // Limpa os controles existentes
             gameControlsContainer.innerHTML = '';
 
-            // Se o usuário for o anfitrião, exibe os controles do jogo
-            if (isHost) {
-                const gameButton = document.createElement('button');
-                gameButton.id = 'game-action-btn';
-                gameButton.textContent = gameStarted ? 'Finalizar Jogo' : 'Iniciar Jogo';
-                gameButton.className = `w-full font-bold py-2 px-4 rounded-lg transition duration-300 ${gameStarted ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`;
+            // Mostra a UI do jogo se o jogo começou, caso contrário, mostra os controles do anfitrião
+            if (gameStarted) {
+                gameView.classList.remove('hidden');
+                settingsBtn.classList.add('hidden'); // Esconde configurações durante o jogo
+                if (isHost) gameControlsContainer.classList.add('hidden'); // Esconde controles do host
+            } else {
+                gameView.classList.add('hidden');
+                settingsBtn.classList.remove('hidden');
+                if (isHost) {
+                    gameControlsContainer.classList.remove('hidden');
+                    const gameButton = document.createElement('button');
+                    gameButton.id = 'game-action-btn';
+                    gameButton.textContent = 'Iniciar Jogo';
+                    gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-green-600 hover:bg-green-700';
+                    gameButton.addEventListener('click', handleGameAction);
 
-                // Adiciona o event listener ao botão
-                gameButton.addEventListener('click', handleGameAction);
+                    // Desabilita o botão se houver menos de 2 jogadores
+                    const participantCount = Object.keys(presences).length;
+                    if (participantCount < 2) {
+                        gameButton.disabled = true;
+                        gameButton.textContent = 'Aguardando mais jogadores...';
+                        gameButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
 
-                gameControlsContainer.appendChild(gameButton);
+                    gameControlsContainer.appendChild(gameButton);
+                }
             }
         }
 
@@ -273,14 +356,114 @@
         async function handleGameAction() {
             if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
 
-            const newState = !gameStarted;
+            if (!gameStarted) {
+                // Iniciar o Jogo
+                const playerIds = Object.keys(presences);
+                if (playerIds.length < 2) {
+                    showLobbyMessage("São necessários pelo menos 2 jogadores para começar.", true);
+                    return;
+                }
+                const newGameState = createInitialGameState(playerIds, currentUser.id);
 
-            // Envia uma mensagem para todos na sala para atualizar o estado do jogo
-            await currentRoomChannel.send({
-                type: 'broadcast',
-                event: 'game_state_change',
-                payload: { gameStarted: newState },
-            });
+                // Rola os dados para todos os jogadores
+                for (const playerId in newGameState.players) {
+                    const player = newGameState.players[playerId];
+                    player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
+                }
+
+                await currentRoomChannel.send({
+                    type: 'broadcast',
+                    event: 'game_state_update',
+                    payload: { gameState: newGameState, gameStarted: true },
+                });
+            } else {
+                // Finalizar o Jogo (implementação futura, se necessário)
+            }
+        }
+
+        function renderGameUI() {
+            if (!gameState || !currentUser) return;
+
+            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
+            const myPlayerState = players[currentUser.id];
+            const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+             // Overlay de Fim de Jogo
+            const gameOverOverlay = document.getElementById('game-over-overlay');
+            if (gameWinner) {
+                const winnerEmail = presences[gameWinner]?.[0].email || 'O campeão';
+                document.getElementById('winner-message').textContent = `${winnerEmail} venceu o jogo!`;
+                gameOverOverlay.style.display = 'flex';
+                return;
+            } else {
+                gameOverOverlay.style.display = 'none';
+            }
+
+            // Controla a visibilidade do overlay de resultado
+            const roundResultOverlay = document.getElementById('round-result-overlay');
+            if (roundInfo && roundInfo.reveal) {
+                document.getElementById('round-result-message').textContent = roundInfo.message;
+                const allDiceReveal = document.getElementById('all-dice-reveal');
+                allDiceReveal.innerHTML = ''; // Limpa a revelação anterior
+
+                // Agrupa os dados por jogador
+                const diceByPlayer = {};
+                for (const pId in players) {
+                    diceByPlayer[pId] = players[pId].dice;
+                }
+
+                for (const playerId in diceByPlayer) {
+                    const playerEmail = presences[playerId]?.[0].email || 'Jogador';
+                    const diceHtml = diceByPlayer[playerId].map(d => `<span class="text-2xl">${diceSymbols[d-1]}</span>`).join(' ');
+                    allDiceReveal.innerHTML += `<div class="mb-2"><p class="font-semibold">${playerEmail}:</p><div class="flex justify-center gap-2">${diceHtml}</div></div>`;
+                }
+
+                roundResultOverlay.style.display = 'flex';
+                return; // Pausa a renderização do resto da UI do jogo
+            } else {
+                roundResultOverlay.style.display = 'none';
+            }
+
+            // Atualiza informações gerais
+            document.getElementById('round-number').textContent = round;
+            const currentPlayerEmail = presences[currentPlayer]?.[0].email || 'Desconhecido';
+            document.getElementById('current-player-email').textContent = currentPlayerEmail;
+
+            // Atualiza o lance atual
+            const bidDisplay = document.getElementById('current-bid-display');
+            if (currentBid) {
+                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><p class="text-2xl font-bold">${currentBid.quantity} x ${diceSymbols[currentBid.face - 1]}</p>`;
+            } else {
+                bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
+            }
+
+            // Atualiza a lista de jogadores
+            const playersList = document.getElementById('game-players-list');
+            playersList.innerHTML = '';
+            for (const playerId in players) {
+                const player = players[playerId];
+                const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
+                const playerDiv = document.createElement('div');
+                playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-blue-800 ring-2 ring-blue-400' : 'bg-gray-700'}`;
+                playerDiv.textContent = `${playerEmail} (${player.diceCount} ${player.diceCount === 1 ? 'dado' : 'dados'})`;
+                playersList.appendChild(playerDiv);
+            }
+
+            // Atualiza os dados do jogador atual
+            const myDiceDisplay = document.getElementById('my-dice-display');
+            myDiceDisplay.innerHTML = '';
+            if (myPlayerState) {
+                myPlayerState.dice.forEach(d => {
+                    const dieSpan = document.createElement('span');
+                    dieSpan.textContent = diceSymbols[d - 1];
+                    myDiceDisplay.appendChild(dieSpan);
+                });
+            }
+
+            // Habilita/desabilita ações
+            const isMyTurn = currentUser.id === currentPlayer;
+            bidForm.querySelector('button').disabled = !isMyTurn;
+            challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
         }
 
         async function handleHostMigration() {
@@ -382,32 +565,34 @@
 
         // --- 7. LÓGICA DAS SALAS (COM REALTIME) ---
         function handlePresenceSync(newState) {
+            presences = newState; // Armazena o estado de presença mais recente
             const listToUpdate = [participantsList, modalParticipantsList];
 
             listToUpdate.forEach(list => {
                 list.innerHTML = ''; // Limpa a lista antes de atualizar
-                let hasParticipants = false;
+                const participantIds = Object.keys(newState);
 
-                for (const id in newState) {
-                    const presences = newState[id];
-                    if (presences.length > 0) {
-                        hasParticipants = true;
-                        const email = presences[0].email || 'Usuário anônimo';
-                        const isHost = id === currentRoom?.creator_id;
-                        const isSelf = id === currentUser?.id;
+                if (participantIds.length > 0) {
+                    participantIds.forEach(id => {
+                        const presencesForId = newState[id];
+                        if (presencesForId.length > 0) {
+                            const email = presencesForId[0].email || 'Usuário anônimo';
+                            const isHost = id === currentRoom?.creator_id;
+                            const isSelf = id === currentUser?.id;
 
-                        const li = document.createElement('li');
-                        li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
-
-                        if (isSelf) li.classList.add('text-blue-300');
-
-                        list.appendChild(li);
-                    }
-                }
-                if (!hasParticipants) {
+                            const li = document.createElement('li');
+                            li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
+                            if (isSelf) li.classList.add('text-blue-300');
+                            list.appendChild(li);
+                        }
+                    });
+                } else {
                     list.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
                 }
             });
+
+            // Atualiza a UI da sala (ex: habilitar/desabilitar botão de iniciar)
+            renderRoomUI();
         }
 
         async function joinRoomRealtime(roomCode) {
@@ -415,13 +600,15 @@
             await leaveRoomRealtime();
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
 
-            // Ouvinte para mudanças de estado de jogo
-            currentRoomChannel.on('broadcast', { event: 'game_state_change' }, ({ payload }) => {
+            // Ouvinte para ATUALIZAÇÕES GERAIS DO JOGO
+            currentRoomChannel.on('broadcast', { event: 'game_state_update' }, ({ payload }) => {
                 gameStarted = payload.gameStarted;
+                gameState = payload.gameState;
                 renderRoomUI();
+                renderGameUI();
             });
 
-            // Novo: Ouvinte para mudanças de anfitrião
+            // Ouvinte para mudanças de anfitrião
             currentRoomChannel.on('broadcast', { event: 'host_change' }, ({ payload }) => {
                 if (currentRoom) {
                     currentRoom.creator_id = payload.newHostId;
@@ -502,11 +689,167 @@
             // Limpa o estado da sala e do jogo
             currentRoom = null;
             gameStarted = false;
-            document.getElementById('game-controls').innerHTML = ''; // Limpa os controles do anfitrião
+            gameState = null; // Limpa o estado do jogo
+            document.getElementById('game-controls').innerHTML = '';
+
+            // Garante que a UI do jogo seja escondida
+            gameView.classList.add('hidden');
+            settingsBtn.classList.remove('hidden');
+
 
             setRoomViewMode(false); // Sai do modo de tela cheia
             showView('lobby-view');
             showLobbyMessage('', false);
+        });
+
+        // --- 8. LÓGICA DE AÇÕES DO JOGO ---
+        bidForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!gameState || currentUser.id !== gameState.currentPlayer) return;
+
+            const quantity = parseInt(document.getElementById('bid-quantity').value, 10);
+            const face = parseInt(document.getElementById('bid-face').value, 10);
+
+            // Validação do lance
+            const { currentBid } = gameState;
+            if (currentBid) {
+                if (quantity < currentBid.quantity || (quantity === currentBid.quantity && face <= currentBid.face)) {
+                    alert("Seu lance deve ser maior que o lance atual.");
+                    return;
+                }
+            }
+             // Determina o próximo jogador
+            const playerIds = Object.keys(gameState.players);
+            const currentIndex = playerIds.indexOf(currentUser.id);
+            const nextIndex = (currentIndex + 1) % playerIds.length;
+            const nextPlayerId = playerIds[nextIndex];
+
+            // Atualiza o estado do jogo com o novo lance
+            const updatedGameState = {
+                ...gameState,
+                currentBid: { quantity, face },
+                lastBidder: currentUser.id,
+                currentPlayer: nextPlayerId,
+                turn: gameState.turn + 1,
+            };
+
+            // Envia o estado atualizado para todos
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_state_update',
+                payload: { gameState: updatedGameState, gameStarted: true },
+            });
+        });
+
+        challengeBtn.addEventListener('click', async () => {
+            if (!gameState || currentUser.id !== gameState.currentPlayer) return;
+
+            const { players, currentBid, lastBidder } = gameState;
+            const challenger = currentUser.id;
+
+            // 1. Contar os dados
+            let actualQuantity = 0;
+            const allDice = [];
+            for (const playerId in players) {
+                players[playerId].dice.forEach(d => {
+                    allDice.push({
+                        playerId,
+                        face: d
+                    });
+                    if (d === currentBid.face) {
+                        actualQuantity++;
+                    }
+                });
+            }
+
+            // 2. Determinar o perdedor
+            const bidWasCorrect = actualQuantity >= currentBid.quantity;
+            const loser = bidWasCorrect ? challenger : lastBidder;
+
+            // 3. Atualizar o estado do jogo
+            const updatedPlayers = { ...players };
+            updatedPlayers[loser].diceCount--;
+
+            const roundMessage = bidWasCorrect ?
+                `O lance era VERDADEIRO! Havia ${actualQuantity} dados de face ${currentBid.face}. ${presences[challenger]?.[0].email} perde um dado.` :
+                `O lance era FALSO! Havia apenas ${actualQuantity} dados de face ${currentBid.face}. ${presences[lastBidder]?.[0].email} perde um dado.`;
+
+            const updatedGameState = {
+                ...gameState,
+                players: updatedPlayers,
+                roundInfo: {
+                    reveal: true,
+                    bidder: lastBidder,
+                    challenger: challenger,
+                    loser: loser,
+                    actualQuantity: actualQuantity,
+                    message: roundMessage,
+                    allDice: allDice // Inclui todos os dados para a revelação
+                }
+            };
+
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_state_update',
+                payload: { gameState: updatedGameState, gameStarted: true },
+            });
+        });
+
+        nextRoundBtn.addEventListener('click', async () => {
+            if (!gameState || !gameState.roundInfo.loser) return;
+            if (currentUser.id !== currentRoom.creator_id) return;
+
+            // 1. Verificar se há um vencedor
+            const remainingPlayers = Object.entries(gameState.players).filter(([id, player]) => player.diceCount > 0);
+            if (remainingPlayers.length <= 1) {
+                const winnerId = remainingPlayers.length === 1 ? remainingPlayers[0][0] : null;
+                const finalGameState = { ...gameState, gameWinner: winnerId };
+
+                await currentRoomChannel.send({
+                    type: 'broadcast',
+                    event: 'game_state_update',
+                    payload: { gameState: finalGameState, gameStarted: true },
+                });
+                return;
+            }
+
+            // 2. Preparar a próxima rodada
+            const playersForNextRound = { ...gameState.players };
+            // Remove jogadores com 0 dados
+            for (const playerId in playersForNextRound) {
+                if (playersForNextRound[playerId].diceCount <= 0) {
+                    delete playersForNextRound[playerId];
+                }
+            }
+
+
+            const nextRoundState = {
+                ...gameState,
+                players: playersForNextRound,
+                currentBid: null,
+                lastBidder: null,
+                turn: 1,
+                round: gameState.round + 1,
+                currentPlayer: gameState.roundInfo.loser,
+                roundInfo: { reveal: false, message: '' },
+            };
+
+            // Rola novos dados para os jogadores restantes
+            for (const playerId in nextRoundState.players) {
+                const player = nextRoundState.players[playerId];
+                player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
+            }
+
+            await currentRoomChannel.send({
+                type: 'broadcast',
+                event: 'game_state_update',
+                payload: { gameState: nextRoundState, gameStarted: true },
+            });
+        });
+
+        backToLobbyBtn.addEventListener('click', () => {
+            // Reutiliza a função de sair da sala para limpar tudo e voltar ao lobby
+            leaveRoomBtn.click();
         });
 
         // --- 7. INICIALIZAÇÃO E AUTENTICAÇÃO ---
