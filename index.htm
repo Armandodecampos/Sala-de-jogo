@@ -353,6 +353,31 @@
         }
 
         // --- 6. LÓGICA DE JOGO E ANFITRIÃO ---
+        /**
+         * Atualiza o estado do jogo localmente, renderiza a UI e transmite para outros jogadores.
+         * Isso garante que a UI do remetente seja atualizada imediatamente.
+         * @param {object} newGameState - O objeto de estado completo do jogo a ser transmitido.
+         * @param {boolean} newGameStarted - O estado de "jogo iniciado".
+         */
+        async function updateAndBroadcastGameState(newGameState, newGameStarted) {
+            // 1. Atualiza o estado local primeiro
+            gameState = newGameState;
+            gameStarted = newGameStarted;
+
+            // 2. Renderiza a UI localmente
+            renderRoomUI();
+            renderGameUI();
+
+            // 3. Transmite o novo estado para os outros
+            if (currentRoomChannel) {
+                await currentRoomChannel.send({
+                    type: 'broadcast',
+                    event: 'game_state_update',
+                    payload: { gameState: newGameState, gameStarted: newGameStarted },
+                });
+            }
+        }
+
         async function handleGameAction() {
             if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
 
@@ -371,11 +396,8 @@
                     player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
                 }
 
-                await currentRoomChannel.send({
-                    type: 'broadcast',
-                    event: 'game_state_update',
-                    payload: { gameState: newGameState, gameStarted: true },
-                });
+                // Atualiza e transmite o estado inicial do jogo
+                await updateAndBroadcastGameState(newGameState, true);
             } else {
                 // Finalizar o Jogo (implementação futura, se necessário)
             }
@@ -733,12 +755,8 @@
                 turn: gameState.turn + 1,
             };
 
-            // Envia o estado atualizado para todos
-            await currentRoomChannel.send({
-                type: 'broadcast',
-                event: 'game_state_update',
-                payload: { gameState: updatedGameState, gameStarted: true },
-            });
+            // Atualiza e transmite o estado
+            await updateAndBroadcastGameState(updatedGameState, true);
         });
 
         challengeBtn.addEventListener('click', async () => {
@@ -788,28 +806,24 @@
                 }
             };
 
-            await currentRoomChannel.send({
-                type: 'broadcast',
-                event: 'game_state_update',
-                payload: { gameState: updatedGameState, gameStarted: true },
-            });
+            await updateAndBroadcastGameState(updatedGameState, true);
         });
 
         nextRoundBtn.addEventListener('click', async () => {
             if (!gameState || !gameState.roundInfo.loser) return;
-            if (currentUser.id !== currentRoom.creator_id) return;
+
+            // Qualquer um pode clicar, mas apenas o anfitrião envia a atualização para evitar corridas.
+            if (currentUser.id !== currentRoom.creator_id) {
+                console.log("Apenas o anfitrião pode iniciar a próxima rodada.");
+                return;
+            }
 
             // 1. Verificar se há um vencedor
             const remainingPlayers = Object.entries(gameState.players).filter(([id, player]) => player.diceCount > 0);
             if (remainingPlayers.length <= 1) {
                 const winnerId = remainingPlayers.length === 1 ? remainingPlayers[0][0] : null;
                 const finalGameState = { ...gameState, gameWinner: winnerId };
-
-                await currentRoomChannel.send({
-                    type: 'broadcast',
-                    event: 'game_state_update',
-                    payload: { gameState: finalGameState, gameStarted: true },
-                });
+                await updateAndBroadcastGameState(finalGameState, true);
                 return;
             }
 
@@ -821,7 +835,6 @@
                     delete playersForNextRound[playerId];
                 }
             }
-
 
             const nextRoundState = {
                 ...gameState,
@@ -839,12 +852,7 @@
                 const player = nextRoundState.players[playerId];
                 player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
             }
-
-            await currentRoomChannel.send({
-                type: 'broadcast',
-                event: 'game_state_update',
-                payload: { gameState: nextRoundState, gameStarted: true },
-            });
+            await updateAndBroadcastGameState(nextRoundState, true);
         });
 
         backToLobbyBtn.addEventListener('click', () => {
