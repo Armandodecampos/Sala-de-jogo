@@ -149,22 +149,25 @@
                 <!-- Ações do Jogador -->
                 <div id="game-actions" class="space-y-4">
                     <!-- Formulário de Lance -->
-                    <form id="bid-form" class="flex items-center justify-center gap-2">
+                    <div id="bid-container" class="flex items-center justify-center gap-2">
                         <label for="bid-quantity" class="sr-only">Quantidade</label>
                         <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-gray-700 text-white p-2 rounded" />
                         <label for="bid-face" class="sr-only">Face do Dado</label>
                         <select id="bid-face" class="w-24 bg-gray-700 text-white p-2 rounded">
-                            <option value="1">⚀ (1)</option>
-                            <option value="2">⚁ (2)</option>
-                            <option value="3">⚂ (3)</option>
-                            <option value="4">⚃ (4)</option>
-                            <option value="5">⚄ (5)</option>
-                            <option value="6">⚅ (6)</option>
+                                <option value="1">1️⃣</option>
+                                <option value="2">2️⃣</option>
+                                <option value="3">3️⃣</option>
+                                <option value="4">4️⃣</option>
+                                <option value="5">5️⃣</option>
+                                <option value="6">6️⃣</option>
                         </select>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded">Apostar</button>
-                    </form>
-                    <!-- Botão de Desafio -->
-                    <button id="challenge-btn" class="w-full bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded" disabled>Duvidar!</button>
+                    </div>
+
+                    <!-- Ações de Duvidar/Apostar Lado a Lado -->
+                    <div class="flex gap-2">
+                        <button id="bid-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded">Apostar</button>
+                        <button id="challenge-btn" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded" disabled>Duvidar!</button>
+                    </div>
                 </div>
 
                 <!-- Overlay de Resultado da Rodada -->
@@ -268,7 +271,7 @@
         const modalLogoutBtn = document.getElementById('modal-logout-btn');
         // Referências da UI do Jogo
         const gameView = document.getElementById('game-view');
-        const bidForm = document.getElementById('bid-form');
+        const bidBtn = document.getElementById('bid-btn');
         const challengeBtn = document.getElementById('challenge-btn');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
@@ -408,7 +411,7 @@
 
             const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
             const myPlayerState = players[currentUser.id];
-            const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            const diceSymbols = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
 
              // Overlay de Fim de Jogo
             const gameOverOverlay = document.getElementById('game-over-overlay');
@@ -484,7 +487,7 @@
 
             // Habilita/desabilita ações
             const isMyTurn = currentUser.id === currentPlayer;
-            bidForm.querySelector('button').disabled = !isMyTurn;
+            bidBtn.disabled = !isMyTurn;
             challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
         }
 
@@ -725,8 +728,7 @@
         });
 
         // --- 8. LÓGICA DE AÇÕES DO JOGO ---
-        bidForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        bidBtn.addEventListener('click', async () => {
             if (!gameState || currentUser.id !== gameState.currentPlayer) return;
 
             const quantity = parseInt(document.getElementById('bid-quantity').value, 10);
