@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby de Salas - Supabase</title>
+    <title>Dado do Mentiroso - Supabase</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega a fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Carrega o cliente Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -24,53 +28,101 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
     </style>
 </head>
-<body id="page-body" class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen">
+<body id="page-body" class="bg-white text-black flex items-center justify-center min-h-screen">
+
+    <!-- SVG Definitions for Dice -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <symbol id="dice-1" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="50" cy="50" r="10" fill="black"/>
+            </symbol>
+            <symbol id="dice-2" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="25" cy="25" r="10" fill="black"/>
+                <circle cx="75" cy="75" r="10" fill="black"/>
+            </symbol>
+            <symbol id="dice-3" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="25" cy="25" r="10" fill="black"/>
+                <circle cx="50" cy="50" r="10" fill="black"/>
+                <circle cx="75" cy="75" r="10" fill="black"/>
+            </symbol>
+            <symbol id="dice-4" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="25" cy="25" r="10" fill="black"/>
+                <circle cx="75" cy="25" r="10" fill="black"/>
+                <circle cx="25" cy="75" r="10" fill="black"/>
+                <circle cx="75" cy="75" r="10" fill="black"/>
+            </symbol>
+            <symbol id="dice-5" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="25" cy="25" r="10" fill="black"/>
+                <circle cx="75" cy="25" r="10" fill="black"/>
+                <circle cx="50" cy="50" r="10" fill="black"/>
+                <circle cx="25" cy="75" r="10" fill="black"/>
+                <circle cx="75" cy="75" r="10" fill="black"/>
+            </symbol>
+            <symbol id="dice-6" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="15" fill="white" stroke="black" stroke-width="2"/>
+                <circle cx="25" cy="25" r="10" fill="black"/>
+                <circle cx="75" cy="25" r="10" fill="black"/>
+                <circle cx="25" cy="50" r="10" fill="black"/>
+                <circle cx="75" cy="50" r="10" fill="black"/>
+                <circle cx="25" cy="75" r="10" fill="black"/>
+                <circle cx="75" cy="75" r="10" fill="black"/>
+            </symbol>
+        </defs>
+    </svg>
 
     <!-- Container Principal -->
-    <div id="main-container" class="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-xl relative">
+    <div id="main-container" class="w-full max-w-md p-10 bg-white border border-gray-200 rounded-lg shadow-xl relative">
 
         <!-- Overlay de Carregamento -->
-        <div id="loading-overlay" class="absolute inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center rounded-lg z-50 hidden">
+        <div id="loading-overlay" class="absolute inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center rounded-lg z-50 hidden">
             <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
         </div>
 
         <!-- Título -->
-        <h1 id="main-title" class="text-3xl font-bold text-center mb-6 text-white">Lobby de Salas</h1>
+        <h1 id="main-title" class="text-3xl font-bold text-center mb-6 text-black">Dado do Mentiroso</h1>
 
         <!-- #1: View de Autenticação -->
         <div id="auth-view">
             <!-- Abas de Login / Cadastro -->
-            <div class="flex mb-4 border-b border-gray-700">
-                <button id="tab-login" class="flex-1 py-2 text-center font-medium text-blue-400 border-b-2 border-blue-400">Login</button>
-                <button id="tab-signup" class="flex-1 py-2 text-center font-medium text-gray-400">Cadastrar</button>
+            <div class="flex mb-4 border-b border-gray-300">
+                <button id="tab-login" class="flex-1 py-2 text-center font-medium text-black border-b-2 border-black">Login</button>
+                <button id="tab-signup" class="flex-1 py-2 text-center font-medium text-gray-500">Cadastrar</button>
             </div>
 
             <!-- Formulário de Login -->
             <form id="login-form">
                 <div class="mb-4">
-                    <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" id="login-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="voce@email.com">
+                    <label for="login-email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="login-email" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black" placeholder="voce@email.com">
                 </div>
                 <div class="mb-6">
-                    <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
-                    <input type="password" id="login-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                    <label for="login-password" class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black" placeholder="••••••••">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Entrar</button>
+                <button type="submit" class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Entrar</button>
             </form>
 
             <!-- Formulário de Cadastro (escondido por padrão) -->
             <form id="signup-form" class="hidden">
                 <div class="mb-4">
-                    <label for="signup-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" id="signup-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="voce@email.com">
+                    <label for="signup-email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="signup-email" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black" placeholder="voce@email.com">
                 </div>
                 <div class="mb-6">
-                    <label for="signup-password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
-                    <input type="password" id="signup-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo 6 caracteres">
+                    <label for="signup-password" class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                    <input type="password" id="signup-password" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black" placeholder="Mínimo 6 caracteres">
                 </div>
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Criar Conta</button>
+                <button type="submit" class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Criar Conta</button>
             </form>
 
             <!-- Mensagens de Auth -->
@@ -82,28 +134,28 @@
             <p id="welcome-message" class="text-center text-lg mb-6"></p>
 
             <!-- Criar Sala -->
-            <button id="create-room-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 mb-6 shadow-lg">
+            <button id="create-room-btn" class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mb-6">
                 Criar Nova Sala
             </button>
 
             <!-- Entrar na Sala -->
             <form id="join-room-form">
-                <label for="room-code-input" class="block text-sm font-medium text-gray-300 mb-2">Entrar em uma Sala</label>
+                <label for="room-code-input" class="block text-sm font-medium text-gray-700 mb-2">Entrar em uma Sala</label>
                 <div class="flex">
-                    <input type="text" id="room-code-input" required class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-l-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite o código">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-300">Entrar</button>
+                    <input type="text" id="room-code-input" required class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-l-lg text-black focus:outline-none focus:ring-2 focus:ring-black" placeholder="Digite o código">
+                    <button type="submit" class="bg-black text-white font-bold py-2 px-4 rounded-r-lg transition-transform transform hover:scale-105">Entrar</button>
                 </div>
             </form>
-            <p id="lobby-message" class="text-center text-red-400 text-sm mt-4"></p>
+            <p id="lobby-message" class="text-center text-red-500 text-sm mt-4"></p>
 
             <!-- Logout -->
-            <button id="logout-btn" class="w-full mt-8 text-gray-400 hover:text-red-400 text-sm transition duration-300">Sair</button>
+            <button id="logout-btn" class="w-full mt-8 text-gray-500 hover:text-red-500 text-sm transition duration-300">Sair</button>
         </div>
 
         <!-- #3: View da Sala (Dentro da Sala) -->
         <div id="room-view" class="hidden relative h-full"> <!-- Adicionado 'relative' e 'h-full' para posicionar o botão -->
             <!-- Botão de Engrenagem (Configurações) -->
-            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-400 hover:text-white transition duration-300">
+            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black transition duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -112,10 +164,10 @@
 
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
             <h2 class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
-            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-blue-400 bg-gray-900 rounded-lg py-4 mb-6 hidden"></p>
+            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6 hidden"></p>
 
-            <h3 class="text-lg font-semibold text-gray-300 mb-3 hidden">Quem está na sala:</h3>
-            <ul id="participants-list" class="list-disc list-inside bg-gray-900 p-4 rounded-lg min-h-[120px] text-gray-200 space-y-1 hidden">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3 hidden">Quem está na sala:</h3>
+            <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1 hidden">
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
 
@@ -125,21 +177,21 @@
             <!-- Tela do Jogo (Dado do Mentiroso) -->
             <div id="game-view" class="hidden mt-6 text-center">
                 <!-- Informações do Jogo -->
-                <div id="game-info" class="mb-4 p-4 bg-gray-900 rounded-lg">
+                <div id="game-info" class="mb-4 p-4 bg-gray-200 rounded-lg">
                     <p class="text-lg">Rodada <span id="round-number">1</span></p>
                     <div id="current-bid-display" class="my-2">
-                        <p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>
+                        <p class="text-gray-600">Nenhum lance ainda. Faça o primeiro!</p>
                     </div>
                     <p class="text-sm">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
                 </div>
 
                 <!-- Lista de Jogadores -->
                 <div id="game-players-list" class="mb-4 grid grid-cols-2 gap-2 text-sm">
-                    <!-- Ex: <div class="p-2 bg-gray-700 rounded">Player1@email.com (5 dados)</div> -->
+                    <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
                 </div>
 
                 <!-- Dados do Jogador Atual -->
-                <div id="my-dice-area" class="mb-4 p-4 bg-gray-900 rounded-lg">
+                <div id="my-dice-area" class="mb-4 p-4 bg-gray-200 rounded-lg">
                     <h3 class="font-bold mb-2">Seus Dados</h3>
                     <div id="my-dice-display" class="flex justify-center items-center space-x-2 text-2xl">
                         <!-- Ex: <span>&#9856;</span> <span>&#9857;</span> ... -->
@@ -151,73 +203,73 @@
                     <!-- Formulário de Lance -->
                     <div id="bid-container" class="flex items-center justify-center gap-2">
                         <label for="bid-quantity" class="sr-only">Quantidade</label>
-                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-gray-700 text-white p-2 rounded" />
+                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
                         <label for="bid-face" class="sr-only">Face do Dado</label>
-                        <select id="bid-face" class="w-24 bg-gray-700 text-white p-2 rounded">
-                                <option value="1">1️⃣</option>
-                                <option value="2">2️⃣</option>
-                                <option value="3">3️⃣</option>
-                                <option value="4">4️⃣</option>
-                                <option value="5">5️⃣</option>
-                                <option value="6">6️⃣</option>
+                        <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
+                                <option value="1">Dado 1</option>
+                                <option value="2">Dado 2</option>
+                                <option value="3">Dado 3</option>
+                                <option value="4">Dado 4</option>
+                                <option value="5">Dado 5</option>
+                                <option value="6">Dado 6</option>
                         </select>
                     </div>
 
                     <!-- Ações de Duvidar/Apostar Lado a Lado -->
                     <div class="flex gap-2">
-                        <button id="bid-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded">Apostar</button>
-                        <button id="challenge-btn" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded" disabled>Duvidar!</button>
+                        <button id="bid-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
+                        <button id="challenge-btn" class="flex-1 bg-gray-300 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar!</button>
                     </div>
                 </div>
 
                 <!-- Overlay de Resultado da Rodada -->
-                <div id="round-result-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-90 flex-col items-center justify-center hidden p-4">
+                <div id="round-result-overlay" class="absolute inset-0 bg-white bg-opacity-90 flex-col items-center justify-center hidden p-4">
                     <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
                     <div id="all-dice-reveal" class="mb-4">
                         <!-- Dados de todos os jogadores serão mostrados aqui -->
                     </div>
-                    <button id="next-round-btn" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded">Próxima Rodada</button>
+                    <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
                 </div>
 
                  <!-- Overlay de Fim de Jogo -->
-                 <div id="game-over-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
-                    <h2 id="winner-message" class="text-3xl font-bold text-yellow-400 mb-4"></h2>
+                 <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
+                    <h2 id="winner-message" class="text-3xl font-bold text-black mb-4"></h2>
                     <p class="mb-6">O jogo terminou.</p>
-                    <button id="back-to-lobby-btn" class="bg-indigo-600 hover:bg-indigo-700 font-bold py-2 px-6 rounded">Voltar para o Lobby</button>
+                    <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
                 </div>
             </div>
 
-            <button id="leave-room-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-6 hidden">Voltar ao Lobby</button>
+            <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6 hidden">Voltar ao Lobby</button>
         </div>
     </div>
 
     <!-- #4: Modal de Configurações da Sala -->
     <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm relative">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm relative">
             <!-- Botão de Fechar -->
-            <button id="close-modal-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-white">
+            <button id="close-modal-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <h2 class="text-2xl font-bold text-white text-center mb-4">Informação da Sala</h2>
+            <h2 class="text-2xl font-bold text-black text-center mb-4">Informação da Sala</h2>
 
             <!-- Código da Sala -->
             <div class="mb-4">
-                <p class="text-gray-400">Código da Sala:</p>
-                <p id="modal-room-code" class="text-2xl font-mono text-blue-400"></p>
+                <p class="text-gray-600">Código da Sala:</p>
+                <p id="modal-room-code" class="text-2xl font-mono text-black"></p>
             </div>
 
             <!-- Jogadores -->
             <div class="mb-6">
-                <p class="text-gray-400">Jogadores:</p>
-                <ul id="modal-participants-list" class="text-white list-disc list-inside space-y-1 mt-1">
+                <p class="text-gray-600">Jogadores:</p>
+                <ul id="modal-participants-list" class="text-black list-disc list-inside space-y-1 mt-1">
                     <!-- Lista de jogadores no modal -->
                 </ul>
             </div>
 
             <!-- Botão de Sair -->
-            <button id="modal-logout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Sair da sala</button>
+            <button id="modal-logout-btn" class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Sair da sala</button>
         </div>
     </div>
 
@@ -411,7 +463,15 @@
 
             const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
             const myPlayerState = players[currentUser.id];
-            const diceSymbols = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
+
+            const diceSVGTags = {
+                1: '<svg class="w-8 h-8"><use href="#dice-1"></use></svg>',
+                2: '<svg class="w-8 h-8"><use href="#dice-2"></use></svg>',
+                3: '<svg class="w-8 h-8"><use href="#dice-3"></use></svg>',
+                4: '<svg class="w-8 h-8"><use href="#dice-4"></use></svg>',
+                5: '<svg class="w-8 h-8"><use href="#dice-5"></use></svg>',
+                6: '<svg class="w-8 h-8"><use href="#dice-6"></use></svg>',
+            };
 
              // Overlay de Fim de Jogo
             const gameOverOverlay = document.getElementById('game-over-overlay');
@@ -439,7 +499,7 @@
 
                 for (const playerId in diceByPlayer) {
                     const playerEmail = presences[playerId]?.[0].email || 'Jogador';
-                    const diceHtml = diceByPlayer[playerId].map(d => `<span class="text-2xl">${diceSymbols[d-1]}</span>`).join(' ');
+                    const diceHtml = diceByPlayer[playerId].map(d => diceSVGTags[d]).join(' ');
                     allDiceReveal.innerHTML += `<div class="mb-2"><p class="font-semibold">${playerEmail}:</p><div class="flex justify-center gap-2">${diceHtml}</div></div>`;
                 }
 
@@ -457,7 +517,7 @@
             // Atualiza o lance atual
             const bidDisplay = document.getElementById('current-bid-display');
             if (currentBid) {
-                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><p class="text-2xl font-bold">${currentBid.quantity} x ${diceSymbols[currentBid.face - 1]}</p>`;
+                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><div class="flex items-center justify-center gap-2"><p class="text-2xl font-bold">${currentBid.quantity} x </p>${diceSVGTags[currentBid.face]}</div>`;
             } else {
                 bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
             }
@@ -469,7 +529,7 @@
                 const player = players[playerId];
                 const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
                 const playerDiv = document.createElement('div');
-                playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-blue-800 ring-2 ring-blue-400' : 'bg-gray-700'}`;
+                playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-black text-white' : 'bg-gray-300'}`;
                 playerDiv.textContent = `${playerEmail} (${player.diceCount} ${player.diceCount === 1 ? 'dado' : 'dados'})`;
                 playersList.appendChild(playerDiv);
             }
@@ -479,9 +539,9 @@
             myDiceDisplay.innerHTML = '';
             if (myPlayerState) {
                 myPlayerState.dice.forEach(d => {
-                    const dieSpan = document.createElement('span');
-                    dieSpan.textContent = diceSymbols[d - 1];
-                    myDiceDisplay.appendChild(dieSpan);
+                    const dieDiv = document.createElement('div');
+                    dieDiv.innerHTML = diceSVGTags[d];
+                    myDiceDisplay.appendChild(dieDiv);
                 });
             }
 
@@ -535,12 +595,12 @@
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
         tabLogin.addEventListener('click', () => {
             loginForm.classList.remove('hidden'); signupForm.classList.add('hidden');
-            tabLogin.classList.add('text-blue-400', 'border-blue-400'); tabSignup.classList.remove('text-blue-400', 'border-blue-400');
+            tabLogin.classList.add('text-black', 'border-black'); tabSignup.classList.remove('text-black', 'border-black');
             authMessage.textContent = '';
         });
         tabSignup.addEventListener('click', () => {
             signupForm.classList.remove('hidden'); loginForm.classList.add('hidden');
-            tabSignup.classList.add('text-blue-400', 'border-blue-400'); tabLogin.classList.remove('text-blue-400', 'border-blue-400');
+            tabSignup.classList.add('text-black', 'border-black'); tabLogin.classList.remove('text-black', 'border-black');
             authMessage.textContent = '';
         });
 
@@ -607,7 +667,7 @@
 
                             const li = document.createElement('li');
                             li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
-                            if (isSelf) li.classList.add('text-blue-300');
+                            if (isSelf) li.classList.add('font-bold');
                             list.appendChild(li);
                         }
                     });
