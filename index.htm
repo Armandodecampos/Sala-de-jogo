@@ -163,10 +163,10 @@
             </button>
 
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
-            <h2 class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
+            <h2 id="room-code-title" class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
             <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6 hidden"></p>
 
-            <h3 class="text-lg font-semibold text-gray-700 mb-3 hidden">Quem está na sala:</h3>
+            <h3 id="participants-title" class="text-lg font-semibold text-gray-700 mb-3 hidden">Quem está na sala:</h3>
             <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1 hidden">
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
@@ -275,6 +275,7 @@
 
     <script type="module">
         import { createInitialGameState } from './game-state.js';
+
         // --- 1. CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA';
@@ -314,6 +315,8 @@
         const pageBody = document.getElementById('page-body');
         const mainContainer = document.getElementById('main-container');
         const mainTitle = document.getElementById('main-title');
+        const roomCodeTitle = document.getElementById('room-code-title');
+        const participantsTitle = document.getElementById('participants-title');
         // Referências do Modal
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
@@ -378,32 +381,35 @@
             const gameControlsContainer = document.getElementById('game-controls');
             gameControlsContainer.innerHTML = '';
 
-            // Mostra a UI do jogo se o jogo começou, caso contrário, mostra os controles do anfitrião
-            if (gameStarted) {
-                gameView.classList.remove('hidden');
-                settingsBtn.classList.add('hidden'); // Esconde configurações durante o jogo
-                if (isHost) gameControlsContainer.classList.add('hidden'); // Esconde controles do host
-            } else {
-                gameView.classList.add('hidden');
-                settingsBtn.classList.remove('hidden');
-                if (isHost) {
-                    gameControlsContainer.classList.remove('hidden');
-                    const gameButton = document.createElement('button');
-                    gameButton.id = 'game-action-btn';
-                    gameButton.textContent = 'Iniciar Jogo';
-                    gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-green-600 hover:bg-green-700';
-                    gameButton.addEventListener('click', handleGameAction);
+            // Controla a visibilidade dos elementos com base no estado do jogo
+            const showLobby = !gameStarted;
+            gameView.classList.toggle('hidden', showLobby);
+            settingsBtn.classList.toggle('hidden', !showLobby);
+            roomCodeTitle.classList.toggle('hidden', !showLobby);
+            roomCodeDisplay.classList.toggle('hidden', !showLobby);
+            participantsTitle.classList.toggle('hidden', !showLobby);
+            participantsList.classList.toggle('hidden', !showLobby);
+            leaveRoomBtn.classList.toggle('hidden', !showLobby);
+            gameControlsContainer.classList.toggle('hidden', !showLobby);
 
-                    // Desabilita o botão se houver menos de 2 jogadores
-                    const participantCount = Object.keys(presences).length;
-                    if (participantCount < 2) {
-                        gameButton.disabled = true;
-                        gameButton.textContent = 'Aguardando mais jogadores...';
-                        gameButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
 
-                    gameControlsContainer.appendChild(gameButton);
+            if (showLobby && isHost) {
+                const gameButton = document.createElement('button');
+                gameButton.id = 'game-action-btn';
+                gameButton.textContent = 'Iniciar Jogo';
+                    gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-black text-white hover:bg-gray-800';
+                gameButton.addEventListener('click', handleGameAction);
+
+                const participantCount = Object.keys(presences).length;
+                if (participantCount < 2) {
+                    gameButton.disabled = true;
+                    gameButton.textContent = 'Aguardando mais jogadores...';
+                    gameButton.classList.add('opacity-50', 'cursor-not-allowed');
                 }
+                gameControlsContainer.appendChild(gameButton);
+            } else if (showLobby && !isHost) {
+                // Se não for o anfitrião, exibe uma mensagem
+                gameControlsContainer.innerHTML = '<p class="text-center text-gray-500">Aguardando o anfitrião iniciar o jogo...</p>';
             }
         }
 
