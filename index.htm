@@ -983,6 +983,11 @@
 
         window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
 
+        window.addEventListener('focus', () => {
+            // Força o desaparecimento do overlay de carregamento ao focar na aba,
+            // caso ele tenha ficado preso por algum motivo de reconexão.
+            toggleLoading(false);
+        });
     </script>
 </body>
 </html>
