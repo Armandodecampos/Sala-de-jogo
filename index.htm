@@ -958,11 +958,26 @@
 
         // Único listener para o estado de autenticação. Ele lida com o login inicial (INITIAL_SESSION) e todas as mudanças.
         sb.auth.onAuthStateChange(async (event, session) => {
-            toggleLoading(true);
+            // Apenas mostra o spinner de carregamento para eventos de autenticação
+            // que o usuário iniciou ativamente (login, logout, sessão inicial).
+            // Isso evita mostrar o spinner para eventos em segundo plano como TOKEN_REFRESHED.
+            const isCriticalAuthEvent = ['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'].includes(event);
+
+            if (isCriticalAuthEvent) {
+                toggleLoading(true);
+            }
+
             try {
                 // Se existe uma sessão, o usuário está logado.
                 if (session) {
-                    await handleUserLoggedIn(session);
+                    // Apenas executa a lógica de login completa para eventos críticos ou se o usuário ainda não estiver definido.
+                    // Isso evita recargas de UI desnecessárias em eventos como TOKEN_REFRESHED.
+                    if (isCriticalAuthEvent || !currentUser) {
+                        await handleUserLoggedIn(session);
+                    } else {
+                        // Para outros eventos (como TOKEN_REFRESHED), apenas garante que o currentUser está atualizado.
+                        currentUser = session.user;
+                    }
                 }
                 // Se não há sessão, o usuário está deslogado.
                 else {
@@ -976,18 +991,14 @@
                 // Garante que o usuário veja a tela de login se algo der errado
                 showView('auth-view');
             } finally {
-                // Garante que o loading seja sempre desativado, mesmo com erros
-                toggleLoading(false);
+                // Garante que o loading seja sempre desativado, caso tenha sido ativado.
+                if (isCriticalAuthEvent) {
+                    toggleLoading(false);
+                }
             }
         });
 
         window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
-
-        window.addEventListener('focus', () => {
-            // Força o desaparecimento do overlay de carregamento ao focar na aba,
-            // caso ele tenha ficado preso por algum motivo de reconexão.
-            toggleLoading(false);
-        });
     </script>
 </body>
 </html>
