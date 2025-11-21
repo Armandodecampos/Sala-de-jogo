@@ -219,6 +219,7 @@
                     <div class="flex gap-2">
                         <button id="bid-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
                         <button id="challenge-btn" class="flex-1 bg-gray-300 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar!</button>
+                        <button id="exact-btn" class="flex-1 bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Cravado!</button>
                     </div>
                 </div>
 
@@ -328,6 +329,7 @@
         const gameView = document.getElementById('game-view');
         const bidBtn = document.getElementById('bid-btn');
         const challengeBtn = document.getElementById('challenge-btn');
+        const exactBtn = document.getElementById('exact-btn');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 
@@ -555,6 +557,26 @@
             const isMyTurn = currentUser.id === currentPlayer;
             bidBtn.disabled = !isMyTurn;
             challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
+            exactBtn.disabled = !isMyTurn || !currentBid;
+        }
+
+        /**
+         * Conta a ocorrência de uma face de dado específica entre todos os jogadores,
+         * tratando os '1's como curingas.
+         * @param {number} face - A face do dado a ser contada (de 1 a 6).
+         * @param {object} players - O objeto de jogadores do estado do jogo.
+         * @returns {number} A contagem total da face do dado.
+         */
+        function countDice(face, players) {
+            let count = 0;
+            for (const playerId in players) {
+                players[playerId].dice.forEach(d => {
+                    if (d === face) {
+                        count++;
+                    }
+                });
+            }
+            return count;
         }
 
         async function handleHostMigration() {
@@ -827,6 +849,54 @@
             await updateAndBroadcastGameState(updatedGameState, true);
         });
 
+        exactBtn.addEventListener('click', async () => {
+            if (!gameState || currentUser.id !== gameState.currentPlayer || !gameState.currentBid) return;
+
+            const { players, currentBid } = gameState;
+            const bidderId = currentUser.id;
+
+            // 1. Contar a quantidade real de dados
+            const actualQuantity = countDice(currentBid.face, players);
+            const allDice = Object.values(players).flatMap(p => p.dice.map(d => ({ playerId: p.id, face: d })));
+
+            // 2. Determinar o resultado e atualizar a contagem de dados
+            const bidWasExact = actualQuantity === currentBid.quantity;
+            const updatedPlayers = JSON.parse(JSON.stringify(players)); // Cópia profunda
+            let roundMessage = '';
+            let loserForNextRound = bidderId; // O jogador que aposta sempre começa a próxima rodada
+
+            if (bidWasExact) {
+                // O jogador acertou, todos os outros perdem um dado
+                roundMessage = `${presences[bidderId]?.[0].email} CRAVOU! Havia exatamente ${actualQuantity} dados de face ${currentBid.face}. Todos os outros jogadores perdem um dado.`;
+                for (const playerId in updatedPlayers) {
+                    if (playerId !== bidderId) {
+                        updatedPlayers[playerId].diceCount--;
+                    }
+                }
+            } else {
+                // O jogador errou e perde um dado
+                updatedPlayers[bidderId].diceCount--;
+                roundMessage = `${presences[bidderId]?.[0].email} errou! Havia ${actualQuantity} dados de face ${currentBid.face}, não ${currentBid.quantity}. Ele perde um dado.`;
+            }
+
+            // 3. Preparar o estado atualizado do jogo para a revelação
+            const updatedGameState = {
+                ...gameState,
+                players: updatedPlayers,
+                roundInfo: {
+                    reveal: true,
+                    bidder: bidderId,
+                    challenger: null, // Não há desafiante neste caso
+                    loser: loserForNextRound,
+                    actualQuantity: actualQuantity,
+                    message: roundMessage,
+                    allDice: allDice,
+                }
+            };
+
+            await updateAndBroadcastGameState(updatedGameState, true);
+        });
+
         challengeBtn.addEventListener('click', async () => {
             if (!gameState || currentUser.id !== gameState.currentPlayer) return;
 
@@ -834,19 +904,8 @@
             const challenger = currentUser.id;
 
             // 1. Contar os dados
-            let actualQuantity = 0;
-            const allDice = [];
-            for (const playerId in players) {
-                players[playerId].dice.forEach(d => {
-                    allDice.push({
-                        playerId,
-                        face: d
-                    });
-                    if (d === currentBid.face) {
-                        actualQuantity++;
-                    }
-                });
-            }
+            const actualQuantity = countDice(currentBid.face, players);
+            const allDice = Object.values(players).flatMap(p => p.dice.map(d => ({ playerId: p.id, face: d })));
 
             // 2. Determinar o perdedor
             const bidWasCorrect = actualQuantity >= currentBid.quantity;
