@@ -230,6 +230,7 @@
                         <!-- Dados de todos os jogadores serão mostrados aqui -->
                     </div>
                     <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
+                    <p id="waiting-for-host-msg" class="text-center text-gray-500 mt-4 hidden">Aguardando o anfitrião iniciar a próxima rodada...</p>
                 </div>
 
                  <!-- Overlay de Fim de Jogo -->
@@ -510,6 +511,12 @@
                     const diceHtml = diceByPlayer[playerId].map(d => diceSVGTags[d]).join(' ');
                     allDiceReveal.innerHTML += `<div class="mb-2"><p class="font-semibold">${playerEmail}:</p><div class="flex justify-center gap-2">${diceHtml}</div></div>`;
                 }
+
+                // Lógica para mostrar o botão "Próxima Rodada" ou a mensagem de espera
+                const isHost = currentUser.id === currentRoom.creator_id;
+                document.getElementById('next-round-btn').classList.toggle('hidden', !isHost);
+                document.getElementById('waiting-for-host-msg').classList.toggle('hidden', isHost);
+
 
                 roundResultOverlay.style.display = 'flex';
                 return; // Pausa a renderização do resto da UI do jogo
