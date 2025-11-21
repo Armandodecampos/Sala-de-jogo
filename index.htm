@@ -485,10 +485,10 @@
             if (gameWinner) {
                 const winnerEmail = presences[gameWinner]?.[0].email || 'O campeão';
                 document.getElementById('winner-message').textContent = `${winnerEmail} venceu o jogo!`;
-                gameOverOverlay.style.display = 'flex';
+                gameOverOverlay.classList.remove('hidden');
                 return;
             } else {
-                gameOverOverlay.style.display = 'none';
+                gameOverOverlay.classList.add('hidden');
             }
 
             // Controla a visibilidade do overlay de resultado
@@ -512,12 +512,13 @@
 
                 // Apenas exibe o botão "Próxima Rodada" para o anfitrião da sala
                 const isHost = currentUser && currentRoom && currentUser.id === currentRoom.creator_id;
-                nextRoundBtn.style.display = isHost ? 'block' : 'none';
+                nextRoundBtn.classList.toggle('hidden', !isHost);
+
 
                 roundResultOverlay.classList.remove('hidden');
                 return; // Pausa a renderização do resto da UI do jogo
             } else {
-                roundResultOverlay.style.display = 'none';
+                roundResultOverlay.classList.add('hidden');
             }
 
             // Atualiza informações gerais
