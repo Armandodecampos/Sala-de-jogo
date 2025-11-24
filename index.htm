@@ -654,10 +654,17 @@
 
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
-            await leaveRoomRealtime();
-            setRoomViewMode(false); // Sai do modo de tela cheia
-            await sb.auth.signOut();
-            toggleLoading(false);
+            try {
+                await leaveRoomRealtime();
+                setRoomViewMode(false); // Sai do modo de tela cheia
+                await sb.auth.signOut();
+            } catch (err) {
+                console.error("Erro ao fazer logout:", err);
+                // Mesmo que haja um erro, o usuário provavelmente quer ser deslogado
+                showView('auth-view'); // Força a volta para a tela de login
+            } finally {
+                toggleLoading(false);
+            }
         });
 
         // --- 6. LÓGICA DO MODAL ---
@@ -761,62 +768,95 @@
         }
 
         createRoomBtn.addEventListener('click', async () => {
-            toggleLoading(true); showLobbyMessage('', false);
-            if (!currentUser) { showLobbyMessage('Erro: Usuário não está logado.', true); toggleLoading(false); return; }
-            const newCode = generateRoomCode();
-            const { data, error } = await sb.from('rooms').insert({ room_code: newCode, creator_id: currentUser.id }).select().single();
-            if (error) {
-                if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
-                else showLobbyMessage(error.message, true);
-            } else if (data) {
-                currentRoom = data; // Armazena todos os detalhes da sala
-                roomCodeDisplay.textContent = data.room_code;
-                showView('room-view');
-                setRoomViewMode(true); // Entra no modo de tela cheia
-                joinRoomRealtime(data.room_code);
-                saveUserCurrentRoom(data.room_code);
-                renderRoomUI(); // Renderiza a UI da sala
+            toggleLoading(true);
+            showLobbyMessage('', false);
+            try {
+                if (!currentUser) {
+                    showLobbyMessage('Erro: Usuário não está logado.', true);
+                    return; // Retorna para que o código de sucesso não seja executado
+                }
+                const newCode = generateRoomCode();
+                const { data, error } = await sb.from('rooms').insert({ room_code: newCode, creator_id: currentUser.id }).select().single();
+
+                if (error) {
+                    if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
+                    else showLobbyMessage(error.message, true);
+                } else if (data) {
+                    currentRoom = data;
+                    roomCodeDisplay.textContent = data.room_code;
+                    showView('room-view');
+                    setRoomViewMode(true);
+                    await joinRoomRealtime(data.room_code);
+                    await saveUserCurrentRoom(data.room_code);
+                    renderRoomUI();
+                }
+            } catch (err) {
+                console.error("Erro inesperado ao criar sala:", err);
+                showLobbyMessage("Ocorreu um erro inesperado. Tente novamente.", true);
+            } finally {
+                toggleLoading(false);
             }
-            toggleLoading(false);
         });
 
         joinRoomForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); toggleLoading(true); showLobbyMessage('', false);
-            const code = roomCodeInput.value.toUpperCase().trim();
-            if (!code) { showLobbyMessage('Por favor, insira um código.', true); toggleLoading(false); return; }
-            const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
-            if (error) showLobbyMessage(error.message, true);
-            else if (data) {
-                currentRoom = data; // Armazena detalhes da sala
-                roomCodeDisplay.textContent = data.room_code;
-                showView('room-view');
-                setRoomViewMode(true); // Entra no modo de tela cheia
-                joinRoomForm.reset();
-                joinRoomRealtime(data.room_code);
-                saveUserCurrentRoom(data.room_code);
-                renderRoomUI(); // Renderiza a UI da sala
-            } else showLobbyMessage('Sala não encontrada. Verifique o código.', true);
-            toggleLoading(false);
+            e.preventDefault();
+            toggleLoading(true);
+            showLobbyMessage('', false);
+            try {
+                const code = roomCodeInput.value.toUpperCase().trim();
+                if (!code) {
+                    showLobbyMessage('Por favor, insira um código.', true);
+                    return;
+                }
+                const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
+
+                if (error) {
+                    showLobbyMessage(error.message, true);
+                } else if (data) {
+                    currentRoom = data;
+                    roomCodeDisplay.textContent = data.room_code;
+                    showView('room-view');
+                    setRoomViewMode(true);
+                    joinRoomForm.reset();
+                    await joinRoomRealtime(data.room_code);
+                    await saveUserCurrentRoom(data.room_code);
+                    renderRoomUI();
+                } else {
+                    showLobbyMessage('Sala não encontrada. Verifique o código.', true);
+                }
+            } catch (err) {
+                console.error("Erro inesperado ao entrar na sala:", err);
+                showLobbyMessage("Ocorreu um erro inesperado. Tente novamente.", true);
+            } finally {
+                toggleLoading(false);
+            }
         });
 
         leaveRoomBtn.addEventListener('click', async () => {
-            await leaveRoomRealtime();
-            clearUserCurrentRoom();
+            toggleLoading(true);
+            try {
+                await leaveRoomRealtime();
+                await clearUserCurrentRoom();
 
-            // Limpa o estado da sala e do jogo
-            currentRoom = null;
-            gameStarted = false;
-            gameState = null; // Limpa o estado do jogo
-            document.getElementById('game-controls').innerHTML = '';
+                // Limpa o estado da sala e do jogo
+                currentRoom = null;
+                gameStarted = false;
+                gameState = null;
+                document.getElementById('game-controls').innerHTML = '';
+                gameView.classList.add('hidden');
+                settingsBtn.classList.remove('hidden');
 
-            // Garante que a UI do jogo seja escondida
-            gameView.classList.add('hidden');
-            settingsBtn.classList.remove('hidden');
-
-
-            setRoomViewMode(false); // Sai do modo de tela cheia
-            showView('lobby-view');
-            showLobbyMessage('', false);
+                setRoomViewMode(false);
+                showView('lobby-view');
+                showLobbyMessage('', false);
+            } catch (err) {
+                console.error("Erro ao sair da sala:", err);
+                // Mesmo que haja erro, a melhor ação é voltar ao lobby
+                showView('lobby-view');
+                showLobbyMessage("Ocorreu um erro ao sair da sala.", true);
+            } finally {
+                toggleLoading(false);
+            }
         });
 
         // --- 8. LÓGICA DE AÇÕES DO JOGO ---
