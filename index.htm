@@ -269,6 +269,12 @@
                 </ul>
             </div>
 
+            <!-- Controles do Anfitrião (dentro do modal) -->
+            <div id="modal-host-controls" class="space-y-2 mb-4 hidden">
+                 <button id="restart-game-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Reiniciar Jogo</button>
+                <button id="end-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Finalizar Jogo</button>
+            </div>
+
             <!-- Botão de Sair -->
             <button id="modal-logout-btn" class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Sair da sala</button>
         </div>
@@ -325,6 +331,10 @@
         const modalRoomCode = document.getElementById('modal-room-code');
         const modalParticipantsList = document.getElementById('modal-participants-list');
         const modalLogoutBtn = document.getElementById('modal-logout-btn');
+        // Referências dos Controles do Anfitrião no Modal
+        const modalHostControls = document.getElementById('modal-host-controls');
+        const endGameBtn = document.getElementById('end-game-btn');
+        const restartGameBtn = document.getElementById('restart-game-btn');
         // Referências da UI do Jogo
         const gameView = document.getElementById('game-view');
         const bidBtn = document.getElementById('bid-btn');
@@ -443,26 +453,24 @@
         async function handleGameAction() {
             if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
 
-            if (!gameStarted) {
-                // Iniciar o Jogo
-                const playerIds = Object.keys(presences);
-                if (playerIds.length < 2) {
-                    showLobbyMessage("São necessários pelo menos 2 jogadores para começar.", true);
-                    return;
-                }
-                const newGameState = createInitialGameState(playerIds, currentUser.id);
-
-                // Rola os dados para todos os jogadores
-                for (const playerId in newGameState.players) {
-                    const player = newGameState.players[playerId];
-                    player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
-                }
-
-                // Atualiza e transmite o estado inicial do jogo
-                await updateAndBroadcastGameState(newGameState, true);
-            } else {
-                // Finalizar o Jogo (implementação futura, se necessário)
+            // Esta função agora lida com Iniciar e Reiniciar Jogo.
+            // Se o jogo não começou, ou se já começou e o anfitrião a aciona
+            // novamente (através do botão Reiniciar), um novo jogo é criado.
+            const playerIds = Object.keys(presences);
+            if (playerIds.length < 2) {
+                showLobbyMessage("São necessários pelo menos 2 jogadores para começar.", true);
+                return;
             }
+            const newGameState = createInitialGameState(playerIds, currentUser.id);
+
+            // Rola os dados para todos os jogadores
+            for (const playerId in newGameState.players) {
+                const player = newGameState.players[playerId];
+                player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
+            }
+
+            // Atualiza e transmite o estado inicial do jogo
+            await updateAndBroadcastGameState(newGameState, true);
         }
 
         function renderGameUI() {
@@ -654,23 +662,22 @@
 
         logoutBtn.addEventListener('click', async () => {
             toggleLoading(true);
-            try {
-                await leaveRoomRealtime();
-                setRoomViewMode(false); // Sai do modo de tela cheia
-                await sb.auth.signOut();
-            } catch (err) {
-                console.error("Erro ao fazer logout:", err);
-                // Mesmo que haja um erro, o usuário provavelmente quer ser deslogado
-                showView('auth-view'); // Força a volta para a tela de login
-            } finally {
-                toggleLoading(false);
-            }
+            await leaveRoomRealtime();
+            setRoomViewMode(false); // Sai do modo de tela cheia
+            await sb.auth.signOut();
+            toggleLoading(false);
         });
 
         // --- 6. LÓGICA DO MODAL ---
         function openSettingsModal() {
             modalRoomCode.textContent = roomCodeDisplay.textContent;
             modalParticipantsList.innerHTML = participantsList.innerHTML;
+
+            // Mostra os controles do anfitrião (Finalizar/Reiniciar Jogo) apenas se
+            // o usuário for o anfitrião E o jogo tiver começado.
+            const isHost = currentUser && currentRoom && currentUser.id === currentRoom.creator_id;
+            modalHostControls.classList.toggle('hidden', !isHost || !gameStarted);
+
             settingsModal.classList.remove('hidden');
         }
 
@@ -684,6 +691,21 @@
             // Fecha o modal e aciona o evento de sair da sala
             closeSettingsModal();
             leaveRoomBtn.click();
+        });
+
+        endGameBtn.addEventListener('click', async () => {
+            if (!currentUser || !currentRoom || currentUser.id !== currentRoom.creator_id) return;
+            closeSettingsModal();
+            // Volta ao estado de lobby (gameStarted = false) sem limpar o estado do jogo
+            // Isso permite que os jogadores vejam quem estava na sala
+            await updateAndBroadcastGameState(gameState, false);
+        });
+
+        restartGameBtn.addEventListener('click', async () => {
+            if (!currentUser || !currentRoom || currentUser.id !== currentRoom.creator_id) return;
+            closeSettingsModal();
+            // Simula o clique no botão de ação do jogo, que reiniciará a partida
+            await handleGameAction();
         });
 
 
@@ -768,95 +790,62 @@
         }
 
         createRoomBtn.addEventListener('click', async () => {
-            toggleLoading(true);
-            showLobbyMessage('', false);
-            try {
-                if (!currentUser) {
-                    showLobbyMessage('Erro: Usuário não está logado.', true);
-                    return; // Retorna para que o código de sucesso não seja executado
-                }
-                const newCode = generateRoomCode();
-                const { data, error } = await sb.from('rooms').insert({ room_code: newCode, creator_id: currentUser.id }).select().single();
-
-                if (error) {
-                    if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
-                    else showLobbyMessage(error.message, true);
-                } else if (data) {
-                    currentRoom = data;
-                    roomCodeDisplay.textContent = data.room_code;
-                    showView('room-view');
-                    setRoomViewMode(true);
-                    await joinRoomRealtime(data.room_code);
-                    await saveUserCurrentRoom(data.room_code);
-                    renderRoomUI();
-                }
-            } catch (err) {
-                console.error("Erro inesperado ao criar sala:", err);
-                showLobbyMessage("Ocorreu um erro inesperado. Tente novamente.", true);
-            } finally {
-                toggleLoading(false);
+            toggleLoading(true); showLobbyMessage('', false);
+            if (!currentUser) { showLobbyMessage('Erro: Usuário não está logado.', true); toggleLoading(false); return; }
+            const newCode = generateRoomCode();
+            const { data, error } = await sb.from('rooms').insert({ room_code: newCode, creator_id: currentUser.id }).select().single();
+            if (error) {
+                if (error.code === '23505') showLobbyMessage('Erro ao criar sala, tente novamente.', true);
+                else showLobbyMessage(error.message, true);
+            } else if (data) {
+                currentRoom = data; // Armazena todos os detalhes da sala
+                roomCodeDisplay.textContent = data.room_code;
+                showView('room-view');
+                setRoomViewMode(true); // Entra no modo de tela cheia
+                joinRoomRealtime(data.room_code);
+                saveUserCurrentRoom(data.room_code);
+                renderRoomUI(); // Renderiza a UI da sala
             }
+            toggleLoading(false);
         });
 
         joinRoomForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            toggleLoading(true);
-            showLobbyMessage('', false);
-            try {
-                const code = roomCodeInput.value.toUpperCase().trim();
-                if (!code) {
-                    showLobbyMessage('Por favor, insira um código.', true);
-                    return;
-                }
-                const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
-
-                if (error) {
-                    showLobbyMessage(error.message, true);
-                } else if (data) {
-                    currentRoom = data;
-                    roomCodeDisplay.textContent = data.room_code;
-                    showView('room-view');
-                    setRoomViewMode(true);
-                    joinRoomForm.reset();
-                    await joinRoomRealtime(data.room_code);
-                    await saveUserCurrentRoom(data.room_code);
-                    renderRoomUI();
-                } else {
-                    showLobbyMessage('Sala não encontrada. Verifique o código.', true);
-                }
-            } catch (err) {
-                console.error("Erro inesperado ao entrar na sala:", err);
-                showLobbyMessage("Ocorreu um erro inesperado. Tente novamente.", true);
-            } finally {
-                toggleLoading(false);
-            }
+            e.preventDefault(); toggleLoading(true); showLobbyMessage('', false);
+            const code = roomCodeInput.value.toUpperCase().trim();
+            if (!code) { showLobbyMessage('Por favor, insira um código.', true); toggleLoading(false); return; }
+            const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
+            if (error) showLobbyMessage(error.message, true);
+            else if (data) {
+                currentRoom = data; // Armazena detalhes da sala
+                roomCodeDisplay.textContent = data.room_code;
+                showView('room-view');
+                setRoomViewMode(true); // Entra no modo de tela cheia
+                joinRoomForm.reset();
+                joinRoomRealtime(data.room_code);
+                saveUserCurrentRoom(data.room_code);
+                renderRoomUI(); // Renderiza a UI da sala
+            } else showLobbyMessage('Sala não encontrada. Verifique o código.', true);
+            toggleLoading(false);
         });
 
         leaveRoomBtn.addEventListener('click', async () => {
-            toggleLoading(true);
-            try {
-                await leaveRoomRealtime();
-                await clearUserCurrentRoom();
+            await leaveRoomRealtime();
+            clearUserCurrentRoom();
 
-                // Limpa o estado da sala e do jogo
-                currentRoom = null;
-                gameStarted = false;
-                gameState = null;
-                document.getElementById('game-controls').innerHTML = '';
-                gameView.classList.add('hidden');
-                settingsBtn.classList.remove('hidden');
+            // Limpa o estado da sala e do jogo
+            currentRoom = null;
+            gameStarted = false;
+            gameState = null; // Limpa o estado do jogo
+            document.getElementById('game-controls').innerHTML = '';
 
-                setRoomViewMode(false);
-                showView('lobby-view');
-                showLobbyMessage('', false);
-            } catch (err) {
-                console.error("Erro ao sair da sala:", err);
-                // Mesmo que haja erro, a melhor ação é voltar ao lobby
-                showView('lobby-view');
-                showLobbyMessage("Ocorreu um erro ao sair da sala.", true);
-            } finally {
-                toggleLoading(false);
-            }
+            // Garante que a UI do jogo seja escondida
+            gameView.classList.add('hidden');
+            settingsBtn.classList.remove('hidden');
+
+
+            setRoomViewMode(false); // Sai do modo de tela cheia
+            showView('lobby-view');
+            showLobbyMessage('', false);
         });
 
         // --- 8. LÓGICA DE AÇÕES DO JOGO ---
@@ -1061,6 +1050,9 @@
 
         // Único listener para o estado de autenticação. Ele lida com o login inicial (INITIAL_SESSION) e todas as mudanças.
         sb.auth.onAuthStateChange(async (event, session) => {
+            // Este manipulador é executado em segundo plano e não deve acionar um
+            // indicador de carregamento visível, pois pode travar a UI em atualizações de sessão.
+            // Apenas os manipuladores de eventos iniciados pelo usuário (login, logout, etc.) devem mostrar o spinner.
             try {
                 // Se existe uma sessão, o usuário está logado.
                 if (session) {
@@ -1076,6 +1068,8 @@
             } catch (error) {
                 console.error("Erro durante a mudança de estado de autenticação:", error);
                 // Garante que o usuário veja a tela de login se algo der errado
+                await leaveRoomRealtime();
+                await sb.auth.signOut().catch(e => console.error('O logout falhou no erro:', e));
                 showView('auth-view');
             }
         });
