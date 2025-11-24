@@ -622,9 +622,11 @@
             return count;
         }
 
-        async function handleHostMigration() {
+        async function handleHostMigration(exitingHostId) {
             const presenceState = currentRoomChannel.presenceState();
-            const participantIds = Object.keys(presenceState);
+            // Garante que o anfitrião que está saindo não seja considerado para a nova liderança.
+            // Isso evita uma condição de corrida onde a lista de presença ainda pode contê-lo.
+            const participantIds = Object.keys(presenceState).filter(id => id !== exitingHostId);
 
             if (participantIds.length === 0) {
                 console.log('A sala está vazia. Nenhuma migração de anfitrião necessária.');
@@ -822,7 +824,7 @@
                 // A 'key' é o ID do usuário que saiu
                 if (key === currentRoom.creator_id) {
                     console.log('O anfitrião saiu da sala. Iniciando a migração de anfitrião...');
-                    handleHostMigration();
+                    handleHostMigration(key);
                 }
             });
 
