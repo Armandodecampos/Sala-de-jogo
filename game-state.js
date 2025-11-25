@@ -18,6 +18,7 @@ export function createInitialGameState(playerIds, firstPlayerId) {
 
     return {
         players: players,
+        turnOrder: [], // Armazena a ordem dos turnos dos jogadores
         currentPlayer: firstPlayerId, // O anfitrião (ou quem for definido) começa
         currentBid: null, // Nenhum lance no início (ex: { quantity: 2, face: 3 })
         lastBidder: null, // Quem fez o último lance

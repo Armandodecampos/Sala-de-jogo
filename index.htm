@@ -193,7 +193,7 @@
                 </div>
 
                 <!-- Lista de Jogadores -->
-                <div id="game-players-list" class="mb-4 grid grid-cols-2 gap-2 text-sm">
+                <div id="game-players-list" class="mb-4 flex flex-col gap-2 text-sm">
                     <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
                 </div>
 
@@ -292,8 +292,12 @@
         <p id="toast-message"></p>
     </div>
 
-    <script type="module">
-        import { createInitialGameState } from './game-state.js';
+    <script>
+        // Mock da função importada para testes locais com file://
+        const createInitialGameState = (playerIds, hostId) => {
+            console.log('Mock createInitialGameState called with:', playerIds, hostId);
+            return { players: {}, currentPlayer: hostId, round: 1 }; // Retorna um estado de jogo mínimo
+        };
 
         // --- 1. CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
@@ -492,7 +496,13 @@
                 showLobbyMessage("São necessários pelo menos 2 jogadores para começar.", true);
                 return;
             }
-            const newGameState = createInitialGameState(playerIds, currentUser.id);
+
+            // Ordena os jogadores por ID para uma ordem de turno consistente.
+            playerIds.sort();
+
+            const newGameState = createInitialGameState(playerIds, playerIds[0]); // O primeiro jogador na ordem alfabética começa.
+            newGameState.turnOrder = playerIds; // Salva a ordem para as próximas rodadas.
+
 
             // Rola os dados para todos os jogadores
             for (const playerId in newGameState.players) {
@@ -573,17 +583,20 @@
                 bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
             }
 
-            // Atualiza a lista de jogadores
+            // Atualiza a lista de jogadores na ordem de turno correta
             const playersList = document.getElementById('game-players-list');
             playersList.innerHTML = '';
-            for (const playerId in players) {
+            gameState.turnOrder.forEach(playerId => {
                 const player = players[playerId];
+                // Se um jogador não tiver mais dados, ele é pulado na renderização.
+                if (!player || player.diceCount <= 0) return;
+
                 const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
                 const playerDiv = document.createElement('div');
                 playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-black text-white' : 'bg-gray-300'}`;
                 playerDiv.textContent = `${playerEmail} (${player.diceCount} ${player.diceCount === 1 ? 'dado' : 'dados'})`;
                 playersList.appendChild(playerDiv);
-            }
+            });
 
             // Atualiza os dados do jogador atual
             const myDiceDisplay = document.getElementById('my-dice-display');
@@ -948,11 +961,11 @@
                     return;
                 }
             }
-             // Determina o próximo jogador
-            const playerIds = Object.keys(gameState.players);
-            const currentIndex = playerIds.indexOf(currentUser.id);
-            const nextIndex = (currentIndex + 1) % playerIds.length;
-            const nextPlayerId = playerIds[nextIndex];
+             // Determina o próximo jogador usando a ordem de turno oficial
+            const { turnOrder } = gameState;
+            const currentIndex = turnOrder.indexOf(currentUser.id);
+            const nextIndex = (currentIndex + 1) % turnOrder.length;
+            const nextPlayerId = turnOrder[nextIndex];
 
             // Atualiza o estado do jogo com o novo lance
             const updatedGameState = {
@@ -1160,6 +1173,15 @@
         });
 
         window.addEventListener('beforeunload', () => { if (currentRoomChannel) leaveRoomRealtime(); });
+
+        // Expor funções e estado para testes do Playwright
+        window.testUtils = {
+            setCurrentUser: (user) => currentUser = user,
+            setGameState: (state) => gameState = state,
+            setPresences: (p) => presences = p,
+            renderGameUI: () => renderGameUI(),
+            showView: (viewId) => showView(viewId),
+        };
     </script>
 </body>
 </html>
