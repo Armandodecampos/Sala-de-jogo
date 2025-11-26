@@ -293,13 +293,41 @@
     </div>
 
     <script>
-        // Mock da função importada para testes locais com file://
-        const createInitialGameState = (playerIds, hostId) => {
-            console.log('Mock createInitialGameState called with:', playerIds, hostId);
-            return { players: {}, currentPlayer: hostId, round: 1 }; // Retorna um estado de jogo mínimo
-        };
+        // --- 1. LÓGICA DE ESTADO DE JOGO ---
+        /**
+         * Cria o estado inicial do jogo para uma lista de jogadores.
+         * Esta função é a fonte da verdade para um novo jogo.
+         */
+        function createInitialGameState(playerIds, firstPlayerId) {
+            const players = {};
+            playerIds.forEach(id => {
+                players[id] = {
+                    diceCount: 5, // Cada jogador começa com 5 dados
+                    dice: [],     // Os dados rolados serão armazenados aqui
+                };
+            });
 
-        // --- 1. CONFIGURAÇÃO DO SUPABASE ---
+            return {
+                players: players,
+                turnOrder: [], // Armazena a ordem dos turnos dos jogadores
+                currentPlayer: firstPlayerId,
+                currentBid: null,
+                lastBidder: null,
+                turn: 1,
+                round: 1,
+                gameWinner: null,
+                roundInfo: {
+                    reveal: false,
+                    bidder: null,
+                    challenger: null,
+                    loser: null,
+                    actualQuantity: 0,
+                    message: '',
+                },
+            };
+        }
+
+        // --- 2. CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = 'https://jwvkewueqtjwtuglfmhi.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dmtld3VlcXRqd3R1Z2xmbWhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjgyOTUsImV4cCI6MjA3NjgwNDI5NX0.M36XSfa6aWGGKOstV7pdT7qNlNsZD6RhUW7ng9OA0UA';
 
@@ -1177,8 +1205,12 @@
         // Expor funções e estado para testes do Playwright
         window.testUtils = {
             setCurrentUser: (user) => currentUser = user,
+            setCurrentRoom: (room) => currentRoom = room,
+            setCurrentRoomChannel: (channel) => currentRoomChannel = channel,
+            setGameStarted: (started) => gameStarted = started,
             setGameState: (state) => gameState = state,
             setPresences: (p) => presences = p,
+            renderRoomUI: () => renderRoomUI(),
             renderGameUI: () => renderGameUI(),
             showView: (viewId) => showView(viewId),
         };
