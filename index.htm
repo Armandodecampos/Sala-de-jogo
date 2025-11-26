@@ -278,7 +278,6 @@
 
             <!-- Controles do Anfitrião (dentro do modal) -->
             <div id="modal-host-controls" class="space-y-2 mb-4 hidden">
-                 <button id="restart-game-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Reiniciar Jogo</button>
                 <button id="end-game-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Finalizar Jogo</button>
             </div>
 
@@ -1166,7 +1165,14 @@
             if (remainingPlayers.length <= 1) {
                 const winnerId = remainingPlayers.length === 1 ? remainingPlayers[0][0] : null;
                 const finalGameState = { ...gameState, gameWinner: winnerId };
-                await updateAndBroadcastGameState(finalGameState, true);
+
+                // O anfitrião atualiza o banco de dados para indicar que o jogo terminou
+                const { error } = await sb.from('rooms').update({ game_started: false }).eq('room_code', currentRoom.room_code);
+                if (error) {
+                    showToast(`Erro ao finalizar o jogo: ${error.message}`);
+                }
+
+                await updateAndBroadcastGameState(finalGameState, false);
                 return;
             }
 
@@ -1199,13 +1205,6 @@
         });
 
         backToLobbyBtn.addEventListener('click', async () => {
-            // Apenas o anfitrião precisa atualizar o estado do banco de dados
-            if (currentUser && currentRoom && currentUser.id === currentRoom.creator_id) {
-                const { error } = await sb.from('rooms').update({ game_started: false }).eq('room_code', currentRoom.room_code);
-                if (error) {
-                    showToast(`Erro ao atualizar a sala: ${error.message}`);
-                }
-            }
             leaveRoomBtn.click();
         });
 
