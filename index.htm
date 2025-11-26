@@ -381,7 +381,6 @@
         // Referências dos Controles do Anfitrião no Modal
         const modalHostControls = document.getElementById('modal-host-controls');
         const endGameBtn = document.getElementById('end-game-btn');
-        const restartGameBtn = document.getElementById('restart-game-btn');
         // Referências da UI do Jogo
         const gameView = document.getElementById('game-view');
         const bidBtn = document.getElementById('bid-btn');
@@ -825,15 +824,11 @@
                 showToast(`Erro ao finalizar o jogo: ${error.message}`);
             }
 
-            await updateAndBroadcastGameState(gameState, false);
+            await updateAndBroadcastGameState(null, false);
+            showView('room-view');
         });
 
-        restartGameBtn.addEventListener('click', async () => {
-            if (!currentUser || !currentRoom || currentUser.id !== currentRoom.creator_id) return;
-            closeSettingsModal();
-            // Simula o clique no botão de ação do jogo, que reiniciará a partida
-            await handleGameAction();
-        });
+
 
 
         // --- 7. LÓGICA DAS SALAS (COM REALTIME) ---
