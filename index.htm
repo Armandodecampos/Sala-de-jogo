@@ -516,29 +516,28 @@
         async function handleGameAction() {
             if (!currentRoomChannel || !currentUser || currentUser.id !== currentRoom.creator_id) return;
 
-            // Esta função agora lida com Iniciar e Reiniciar Jogo.
-            // Se o jogo não começou, ou se já começou e o anfitrião a aciona
-            // novamente (através do botão Reiniciar), um novo jogo é criado.
             const playerIds = Object.keys(presences);
             if (playerIds.length < 2) {
-                showLobbyMessage("São necessários pelo menos 2 jogadores para começar.", true);
+                showToast("São necessários pelo menos 2 jogadores para começar.");
                 return;
             }
 
-            // Ordena os jogadores por ID para uma ordem de turno consistente.
+            // Atualiza o sinalizador no banco de dados primeiro
+            const { error } = await sb.from('rooms').update({ game_started: true }).eq('room_code', currentRoom.room_code);
+            if (error) {
+                showToast(`Erro ao iniciar o jogo: ${error.message}`);
+                return;
+            }
+
             playerIds.sort();
+            const newGameState = createInitialGameState(playerIds, playerIds[0]);
+            newGameState.turnOrder = playerIds;
 
-            const newGameState = createInitialGameState(playerIds, playerIds[0]); // O primeiro jogador na ordem alfabética começa.
-            newGameState.turnOrder = playerIds; // Salva a ordem para as próximas rodadas.
-
-
-            // Rola os dados para todos os jogadores
             for (const playerId in newGameState.players) {
                 const player = newGameState.players[playerId];
                 player.dice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
             }
 
-            // Atualiza e transmite o estado inicial do jogo
             await updateAndBroadcastGameState(newGameState, true);
         }
 
@@ -819,8 +818,14 @@
         endGameBtn.addEventListener('click', async () => {
             if (!currentUser || !currentRoom || currentUser.id !== currentRoom.creator_id) return;
             closeSettingsModal();
-            // Volta ao estado de lobby (gameStarted = false) sem limpar o estado do jogo
-            // Isso permite que os jogadores vejam quem estava na sala
+
+            // O anfitrião atualiza o banco de dados para indicar que o jogo terminou
+            const { error } = await sb.from('rooms').update({ game_started: false }).eq('room_code', currentRoom.room_code);
+            if (error) {
+                // Informa o anfitrião se a atualização falhar, mas continua mesmo assim
+                showToast(`Erro ao finalizar o jogo: ${error.message}`);
+            }
+
             await updateAndBroadcastGameState(gameState, false);
         });
 
@@ -969,19 +974,25 @@
                     showLobbyMessage('Por favor, insira um código.', true);
                     return;
                 }
-                const { data, error } = await sb.from('rooms').select('room_code, creator_id').eq('room_code', code).maybeSingle();
+                // Agora, também seleciona a coluna 'game_started'
+                const { data, error } = await sb.from('rooms').select('room_code, creator_id, game_started').eq('room_code', code).maybeSingle();
 
                 if (error) {
                     showLobbyMessage(error.message, true);
                 } else if (data) {
-                    currentRoom = data;
-                    roomCodeDisplay.textContent = data.room_code;
-                    showView('room-view');
-                    setRoomViewMode(true);
-                    joinRoomForm.reset();
-                    await joinRoomRealtime(data.room_code);
-                    await saveUserCurrentRoom(data.room_code);
-                    renderRoomUI();
+                    // Verifica o sinalizador 'game_started'
+                    if (data.game_started) {
+                        showLobbyMessage('O jogo já começou nesta sala.', true);
+                    } else {
+                        currentRoom = data;
+                        roomCodeDisplay.textContent = data.room_code;
+                        showView('room-view');
+                        setRoomViewMode(true);
+                        joinRoomForm.reset();
+                        await joinRoomRealtime(data.room_code);
+                        await saveUserCurrentRoom(data.room_code);
+                        renderRoomUI();
+                    }
                 } else {
                     showLobbyMessage('Sala não encontrada. Verifique o código.', true);
                 }
@@ -1187,8 +1198,14 @@
             await updateAndBroadcastGameState(nextRoundState, true);
         });
 
-        backToLobbyBtn.addEventListener('click', () => {
-            // Reutiliza a função de sair da sala para limpar tudo e voltar ao lobby
+        backToLobbyBtn.addEventListener('click', async () => {
+            // Apenas o anfitrião precisa atualizar o estado do banco de dados
+            if (currentUser && currentRoom && currentUser.id === currentRoom.creator_id) {
+                const { error } = await sb.from('rooms').update({ game_started: false }).eq('room_code', currentRoom.room_code);
+                if (error) {
+                    showToast(`Erro ao atualizar a sala: ${error.message}`);
+                }
+            }
             leaveRoomBtn.click();
         });
 

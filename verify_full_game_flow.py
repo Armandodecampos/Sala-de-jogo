@@ -19,21 +19,40 @@ async def main():
 
         await page.evaluate(f"""
             (async () => {{
+                // Mock da chamada de atualização do banco de dados para evitar erros de rede
+                const originalFrom = sb.from;
+                sb.from = (tableName) => {{
+                    if (tableName === 'rooms') {{
+                        return {{
+                            update: () => ({{
+                                eq: () => ({{
+                                    // Simula uma atualização bem-sucedida
+                                    then: (callback) => callback({{ error: null }})
+                                }})
+                            }})
+                        }};
+                    }}
+                    return originalFrom.apply(sb, [tableName]);
+                }};
+
                 const hostId = '{host_id}';
                 const otherPlayerId = '{other_player_id}';
 
-                // Simula o estado antes de o jogo começar usando os setters
                 window.testUtils.setCurrentUser({{ id: hostId, email: 'host@email.com' }});
                 window.testUtils.setCurrentRoom({{ room_code: 'TEST1', creator_id: hostId }});
-                // Adiciona um mock do canal para passar a verificação de guarda
-                window.testUtils.setCurrentRoomChannel({{ send: () => {{}} }});
+                window.testUtils.setCurrentRoomChannel({{
+                    send: () => {{}},
+                    presenceState: () => ({{
+                        [hostId]: [{{ email: 'host@email.com' }}],
+                        [otherPlayerId]: [{{ email: 'player2@email.com' }}]
+                    }})
+                }});
                 window.testUtils.setPresences({{
                     [hostId]: [{{ email: 'host@email.com' }}],
                     [otherPlayerId]: [{{ email: 'player2@email.com' }}]
                 }});
                 window.testUtils.setGameStarted(false);
 
-                // Renderiza a visualização da sala (lobby)
                 window.testUtils.showView('room-view');
                 window.testUtils.renderRoomUI();
             }})()
