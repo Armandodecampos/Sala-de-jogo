@@ -309,19 +309,19 @@
             return {
                 players: players,
                 turnOrder: [], // Armazena a ordem dos turnos dos jogadores
-                currentPlayer: firstPlayerId,
-                currentBid: null,
-                lastBidder: null,
+                currentPlayer: firstPlayerId, // O anfitrião (ou quem for definido) começa
+                currentBid: null, // Nenhum lance no início (ex: { quantity: 2, face: 3 })
+                lastBidder: null, // Quem fez o último lance
                 turn: 1,
                 round: 1,
-                gameWinner: null,
-                roundInfo: {
-                    reveal: false,
-                    bidder: null,
-                    challenger: null,
-                    loser: null,
-                    actualQuantity: 0,
-                    message: '',
+                gameWinner: null, // ID do vencedor final
+                roundInfo: {      // Informações sobre a resolução da rodada
+                    reveal: false,    // Se os dados devem ser revelados
+                    bidder: null,     // Quem fez o lance
+                    challenger: null, // Quem desafiou
+                    loser: null,      // Quem perdeu o dado
+                    actualQuantity: 0,// Quantidade real do dado apostado
+                    message: '',      // Mensagem de resultado da rodada
                 },
             };
         }
