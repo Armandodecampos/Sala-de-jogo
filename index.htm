@@ -931,6 +931,8 @@
 
 
         createRoomBtn.addEventListener('click', async () => {
+            // Desativa o botão para evitar cliques duplos, que causam a condição de corrida.
+            createRoomBtn.disabled = true;
             toggleLoading(true);
             showLobbyMessage('', false);
             try {
@@ -957,6 +959,8 @@
                 console.error("Erro inesperado ao criar sala:", err);
                 showLobbyMessage("Ocorreu um erro inesperado. Tente novamente.", true);
             } finally {
+                // Reativa o botão no final, seja sucesso ou falha.
+                createRoomBtn.disabled = false;
                 toggleLoading(false);
             }
         });
