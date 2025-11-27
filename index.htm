@@ -182,46 +182,38 @@
             <div id="game-controls" class="mt-6"></div>
 
             <!-- Tela do Jogo (Dado do Mentiroso) -->
-            <div id="game-view" class="hidden mt-6 text-center">
-                <!-- Informações do Jogo -->
-                <div id="game-info" class="mb-4 p-4 bg-gray-200 rounded-lg">
-                    <p class="text-lg">Rodada <span id="round-number">1</span></p>
-                    <div id="current-bid-display" class="my-2">
-                        <p class="text-gray-600">Nenhum lance ainda. Faça o primeiro!</p>
-                    </div>
-                    <p class="text-sm">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
-                </div>
-
-                <!-- Lista de Jogadores -->
-                <div id="game-players-list" class="mb-4 flex flex-col gap-2 text-sm">
-                    <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
-                </div>
-
-                <!-- Dados do Jogador Atual -->
-                <div id="my-dice-area" class="mb-4 p-4 bg-gray-200 rounded-lg">
-                    <h3 class="font-bold mb-2">Seus Dados</h3>
-                    <div id="my-dice-display" class="flex justify-center items-center space-x-2 text-2xl">
-                        <!-- Ex: <span>&#9856;</span> <span>&#9857;</span> ... -->
+            <div id="game-view" class="hidden h-full flex flex-col text-center">
+                <!-- Cabeçalho Fixo: Seus Dados -->
+                <div id="game-header" class="flex-shrink-0 p-4 bg-gray-100 border-b border-gray-300">
+                    <h3 class="font-bold text-lg mb-2">Seus dados</h3>
+                    <div id="my-dice-display" class="flex justify-center items-center space-x-2">
+                        <!-- SVGs dos dados aparecerão aqui -->
                     </div>
                 </div>
 
-                <!-- Ações do Jogador -->
-                <div id="game-actions" class="space-y-4">
+                <!-- Conteúdo Rolável: Histórico de Apostas -->
+                <div id="game-bid-history" class="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-3">
+                    <!-- As "mensagens" de aposta aparecerão aqui -->
+                </div>
+
+                <!-- Rodapé Fixo: Ações do Jogador -->
+                <div id="game-footer" class="flex-shrink-0 p-4 bg-gray-100 border-t border-gray-300">
+                     <!-- Informação do Turno -->
+                     <p class="text-sm mb-2">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
                     <!-- Formulário de Lance -->
-                    <div id="bid-container" class="flex items-center justify-center gap-2">
+                    <div id="bid-container" class="flex items-center justify-center gap-2 mb-2">
                         <label for="bid-quantity" class="sr-only">Quantidade</label>
                         <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
                         <label for="bid-face" class="sr-only">Face do Dado</label>
                         <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
-                                <option value="1">Dado 1</option>
-                                <option value="2">Dado 2</option>
-                                <option value="3">Dado 3</option>
-                                <option value="4">Dado 4</option>
-                                <option value="5">Dado 5</option>
-                                <option value="6">Dado 6</option>
+                            <option value="1">Dado 1</option>
+                            <option value="2">Dado 2</option>
+                            <option value="3">Dado 3</option>
+                            <option value="4">Dado 4</option>
+                            <option value="5">Dado 5</option>
+                            <option value="6">Dado 6</option>
                         </select>
                     </div>
-
                     <!-- Ações de Duvidar/Apostar Lado a Lado -->
                     <div class="flex gap-2">
                         <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
@@ -229,22 +221,23 @@
                         <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Confirmar</button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Overlay de Resultado da Rodada -->
-                <div id="round-result-overlay" class="absolute inset-0 bg-white flex-col items-center justify-center hidden p-4 z-10">
-                    <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
-                    <div id="all-dice-reveal" class="mb-4">
-                        <!-- Dados de todos os jogadores serão mostrados aqui -->
-                    </div>
-                    <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
+            <!-- Overlays movidos para fora do #game-view para garantir que cubram a tela inteira -->
+            <!-- Overlay de Resultado da Rodada -->
+            <div id="round-result-overlay" class="absolute inset-0 bg-white flex-col items-center justify-center hidden p-4 z-10">
+                <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
+                <div id="all-dice-reveal" class="mb-4">
+                    <!-- Dados de todos os jogadores serão mostrados aqui -->
                 </div>
+                <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
+            </div>
 
-                 <!-- Overlay de Fim de Jogo -->
-                 <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
-                    <h2 id="winner-message" class="text-3xl font-bold text-black mb-4"></h2>
-                    <p class="mb-6">O jogo terminou.</p>
-                    <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
-                </div>
+            <!-- Overlay de Fim de Jogo -->
+            <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
+                <h2 id="winner-message" class="text-3xl font-bold text-black mb-4"></h2>
+                <p class="mb-6">O jogo terminou.</p>
+                <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
             </div>
 
             <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6 hidden">Voltar ao Lobby</button>
@@ -312,6 +305,7 @@
                 currentPlayer: firstPlayerId, // O anfitrião (ou quem for definido) começa
                 currentBid: null, // Nenhum lance no início (ex: { quantity: 2, face: 3 })
                 lastBidder: null, // Quem fez o último lance
+                bidHistory: [], // NOVO: Armazena o histórico de lances da rodada
                 turn: 1,
                 round: 1,
                 gameWinner: null, // ID do vencedor final
@@ -542,9 +536,10 @@
         function renderGameUI() {
             if (!gameState || !currentUser) return;
 
-            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
+            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner, bidHistory } = gameState;
             const myPlayerState = players[currentUser.id];
 
+            // Dicionário de SVGs para os dados
             const diceSVGTags = {
                 1: '<svg class="w-8 h-8"><use href="#dice-1"></use></svg>',
                 2: '<svg class="w-8 h-8"><use href="#dice-2"></use></svg>',
@@ -554,7 +549,7 @@
                 6: '<svg class="w-8 h-8"><use href="#dice-6"></use></svg>',
             };
 
-             // Overlay de Fim de Jogo
+            // 1. Manipulação de Overlays (Fim de Jogo e Resultado da Rodada)
             const gameOverOverlay = document.getElementById('game-over-overlay');
             if (gameWinner) {
                 const winnerEmail = presences[gameWinner]?.[0].email || 'O campeão';
@@ -565,68 +560,30 @@
                 gameOverOverlay.classList.add('hidden');
             }
 
-            // Controla a visibilidade do overlay de resultado
             const roundResultOverlay = document.getElementById('round-result-overlay');
             if (roundInfo && roundInfo.reveal) {
                 document.getElementById('round-result-message').textContent = roundInfo.message;
                 const allDiceReveal = document.getElementById('all-dice-reveal');
-                allDiceReveal.innerHTML = ''; // Limpa a revelação anterior
+                allDiceReveal.innerHTML = ''; // Limpa antes de popular
 
-                // Agrupa os dados por jogador
-                const diceByPlayer = {};
-                for (const pId in players) {
-                    diceByPlayer[pId] = players[pId].dice;
-                }
-
-                for (const playerId in diceByPlayer) {
+                Object.keys(players).forEach(playerId => {
                     const playerEmail = presences[playerId]?.[0].email || 'Jogador';
-                    const diceHtml = diceByPlayer[playerId].map(d => diceSVGTags[d]).join(' ');
+                    const diceHtml = players[playerId].dice.map(d => diceSVGTags[d]).join(' ');
                     allDiceReveal.innerHTML += `<div class="mb-2"><p class="font-semibold">${playerEmail}:</p><div class="flex justify-center gap-2">${diceHtml}</div></div>`;
-                }
+                });
 
-                // Apenas exibe o botão "Próxima Rodada" para o anfitrião da sala
                 const isHost = currentUser && currentRoom && currentUser.id === currentRoom.creator_id;
                 nextRoundBtn.classList.toggle('hidden', !isHost);
-
-
                 roundResultOverlay.classList.remove('hidden');
-                return; // Pausa a renderização do resto da UI do jogo
+                return; // Interrompe a renderização da UI principal do jogo
             } else {
                 roundResultOverlay.classList.add('hidden');
             }
 
-            // Atualiza informações gerais
-            document.getElementById('round-number').textContent = round;
-            const currentPlayerEmail = presences[currentPlayer]?.[0].email || 'Desconhecido';
-            document.getElementById('current-player-email').textContent = currentPlayerEmail;
-
-            // Atualiza o lance atual
-            const bidDisplay = document.getElementById('current-bid-display');
-            if (currentBid) {
-                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><div class="flex items-center justify-center gap-2"><p class="text-2xl font-bold">${currentBid.quantity} x </p>${diceSVGTags[currentBid.face]}</div>`;
-            } else {
-                bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
-            }
-
-            // Atualiza a lista de jogadores na ordem de turno correta
-            const playersList = document.getElementById('game-players-list');
-            playersList.innerHTML = '';
-            gameState.turnOrder.forEach(playerId => {
-                const player = players[playerId];
-                // Se um jogador não tiver mais dados, ele é pulado na renderização.
-                if (!player || player.diceCount <= 0) return;
-
-                const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
-                const playerDiv = document.createElement('div');
-                playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-black text-white' : 'bg-gray-300'}`;
-                playerDiv.textContent = `${playerEmail} (${player.diceCount} ${player.diceCount === 1 ? 'dado' : 'dados'})`;
-                playersList.appendChild(playerDiv);
-            });
-
-            // Atualiza os dados do jogador atual
+            // 2. Renderização do Cabeçalho (Seus Dados)
             const myDiceDisplay = document.getElementById('my-dice-display');
             myDiceDisplay.innerHTML = '';
-            if (myPlayerState) {
+            if (myPlayerState && myPlayerState.dice) {
                 myPlayerState.dice.forEach(d => {
                     const dieDiv = document.createElement('div');
                     dieDiv.innerHTML = diceSVGTags[d];
@@ -634,10 +591,41 @@
                 });
             }
 
-            // Habilita/desabilita ações
+            // 3. Renderização do Conteúdo (Histórico de Apostas)
+            const bidHistoryContainer = document.getElementById('game-bid-history');
+            bidHistoryContainer.innerHTML = ''; // Limpa o histórico
+            if (bidHistory && bidHistory.length > 0) {
+                bidHistory.forEach(bid => {
+                    const bidderEmail = presences[bid.bidderId]?.[0].email || 'Alguém';
+                    const isSelf = bid.bidderId === currentUser.id;
+                    const messageClass = isSelf ? 'bg-blue-500 text-white self-end' : 'bg-gray-300 text-black self-start';
+
+                    const bidMessage = document.createElement('div');
+                    bidMessage.className = `rounded-lg p-3 max-w-xs ${messageClass}`;
+                    bidMessage.innerHTML = `
+                        <p class="font-bold text-sm">${bidderEmail}</p>
+                        <div class="flex items-center gap-2">
+                            <span>apostou ${bid.quantity} x</span>
+                            ${diceSVGTags[bid.face]}
+                        </div>
+                    `;
+                    bidHistoryContainer.appendChild(bidMessage);
+                });
+            } else {
+                 bidHistoryContainer.innerHTML = '<p class="text-center text-gray-500">Nenhuma aposta ainda. Faça a primeira!</p>';
+            }
+             // Garante que o scroll fique sempre no final
+            bidHistoryContainer.scrollTop = bidHistoryContainer.scrollHeight;
+
+
+            // 4. Renderização do Rodapé (Ações e Informações do Turno)
+            const currentPlayerEmail = presences[currentPlayer]?.[0].email || '...';
+            document.getElementById('current-player-email').textContent = currentPlayerEmail;
+
+            // Habilita/desabilita ações com base no turno
             const isMyTurn = currentUser.id === currentPlayer;
             bidBtn.disabled = !isMyTurn;
-            challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
+            challengeBtn.disabled = !isMyTurn || !currentBid;
             exactBtn.disabled = !isMyTurn || !currentBid;
         }
 
@@ -688,49 +676,6 @@
 
             // Transmite o estado atualizado
             await updateAndBroadcastGameState(updatedGameState, true);
-        }
-
-        async function handleHostMigration(exitingHostId) {
-            const presenceState = currentRoomChannel.presenceState();
-            // Garante que o anfitrião que está saindo não seja considerado para a nova liderança.
-            // Isso evita uma condição de corrida onde a lista de presença ainda pode contê-lo.
-            const participantIds = Object.keys(presenceState).filter(id => id !== exitingHostId);
-
-            if (participantIds.length === 0) {
-                console.log('A sala está vazia. Nenhuma migração de anfitrião necessária.');
-                return;
-            }
-
-            // Lógica de seleção determinística: ordena os IDs dos participantes restantes
-            // e escolhe o primeiro como o novo anfitrião. Isso garante que todos os clientes
-            // concordem sobre quem é o novo anfitrião, sem depender de aleatoriedade.
-            participantIds.sort();
-            const newHostId = participantIds[0];
-
-            // Apenas o cliente que foi selecionado como o novo anfitrião atualiza o banco de dados.
-            if (currentUser && currentUser.id === newHostId) {
-                console.log(`Você é o novo anfitrião. Atualizando o banco de dados.`);
-                const { error } = await sb.from('rooms')
-                    .update({ creator_id: newHostId })
-                    .eq('room_code', currentRoom.room_code);
-
-                if (error) {
-                    console.error('Erro ao atualizar o anfitrião no banco de dados:', error.message);
-                } else {
-                    console.log('Anfitrião atualizado com sucesso no banco de dados.');
-                    // Transmite a mudança para todos os clientes, incluindo quem é o novo anfitrião.
-                    const newHostEmail = presenceState[newHostId]?.[0]?.email || 'um novo anfitrião';
-                    await currentRoomChannel.send({
-                        type: 'broadcast',
-                        event: 'host_change',
-                        payload: {
-                            newHostId: newHostId,
-                            newHostEmail: newHostEmail,
-                            oldHostId: exitingHostId // Adiciona o ID do anfitrião que saiu
-                        },
-                    });
-                }
-            }
         }
 
         // --- 5. LÓGICA DE AUTENTICAÇÃO ---
@@ -876,56 +821,104 @@
                 renderGameUI();
             });
 
-            // Ouvinte para mudanças de anfitrião
-            currentRoomChannel.on('broadcast', { event: 'host_change' }, ({ payload }) => {
-                if (currentRoom) {
-                    const oldHostId = payload.oldHostId;
-                    currentRoom.creator_id = payload.newHostId;
-                    const newHostEmail = payload.newHostEmail || 'um novo anfitrião';
-                    showToast(`${newHostEmail} agora é o anfitrião!`);
-
-                    // Se o cliente atual for o NOVO anfitrião, ele é responsável
-                    // por limpar o estado do jogo.
-                    if (gameStarted && currentUser && currentUser.id === payload.newHostId) {
-                        console.log(`Você é o novo anfitrião. Removendo o anfitrião antigo (${oldHostId}) do jogo.`);
-                        handleGameStateUpdateForLeavingPlayer(oldHostId);
-                    }
-
-                    // Re-renderize a UI da sala e a lista de participantes para todos
-                    handlePresenceSync(currentRoomChannel.presenceState());
-                    renderRoomUI();
-                }
+            // NOVO: Ouvinte para quando o anfitrião fecha a sala intencionalmente
+            currentRoomChannel.on('broadcast', { event: 'host_left_and_closed_room' }, ({ payload }) => {
+                showToast(payload.message || 'O anfitrião encerrou a sala.');
+                // Força a saída da sala e o retorno ao lobby
+                leaveRoomAndGoToLobby();
             });
 
-            currentRoomChannel.on('presence', { event: 'sync' }, () => handlePresenceSync(currentRoomChannel.presenceState()));
 
-            // Novo: Ouvinte para detectar quando um jogador sai
+            currentRoomChannel.on('presence', { event: 'sync' }, () => {
+                handlePresenceSync(currentRoomChannel.presenceState());
+            });
+
+            // Ouvinte para detectar quando um jogador sai (desconexão inesperada)
             currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                 const leavingPlayerId = key;
-                // A 'key' é o ID do usuário que saiu
-                if (leavingPlayerId === currentRoom.creator_id) {
-                    console.log('O anfitrião saiu da sala. Iniciando a migração de anfitrião...');
-                    handleHostMigration(leavingPlayerId);
-                } else if (gameStarted && currentUser.id === currentRoom.creator_id) {
-                    // Se um jogador que não é o anfitrião sai E o cliente atual é o anfitrião,
-                    // o anfitrião é responsável por atualizar o estado do jogo.
+                if (leavingPlayerId === currentRoom?.creator_id) {
+                    // Se o anfitrião sair inesperadamente, os clientes restantes limpam a sala
+                    // e voltam para o lobby para evitar ficarem presos.
+                    console.log('O anfitrião desconectou-se inesperadamente. Verificando a necessidade de limpeza.');
+
+                    const remainingParticipantIds = Object.keys(currentRoomChannel.presenceState())
+                        .filter(id => id !== leavingPlayerId);
+
+                    if (remainingParticipantIds.length > 0) {
+                        // Seleção determinística: o primeiro ID em ordem alfabética é o responsável por limpar.
+                        remainingParticipantIds.sort();
+                        const designatedCleanerId = remainingParticipantIds[0];
+
+                        if (currentUser && currentUser.id === designatedCleanerId) {
+                            console.log('Você foi designado para limpar a sala órfã.');
+                            sb.from('rooms').delete().eq('room_code', currentRoom.room_code)
+                                .then(({ error }) => {
+                                    if (error) console.error('Erro ao limpar a sala órfã:', error.message);
+                                    else console.log('Sala órfã limpa com sucesso.');
+                                });
+                        }
+                    }
+                    // Todos os clientes restantes são enviados de volta ao lobby.
+                    showToast('O anfitrião desconectou-se. A sala foi fechada.');
+                    leaveRoomAndGoToLobby();
+
+                } else if (gameStarted && currentUser?.id === currentRoom?.creator_id) {
+                    // Se um jogador (não anfitrião) sai durante um jogo, o anfitrião atualiza o estado.
                     console.log(`O jogador ${leavingPlayerId} saiu. O anfitrião está atualizando o estado do jogo.`);
                     handleGameStateUpdateForLeavingPlayer(leavingPlayerId);
                 }
+                 // É importante chamar o sync aqui para atualizar a lista de participantes imediatamente
+                 handlePresenceSync(currentRoomChannel.presenceState());
             });
 
             currentRoomChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') await currentRoomChannel.track({ email: currentUser.email, joined_at: new Date().toISOString() });
+                if (status === 'SUBSCRIBED') {
+                    await currentRoomChannel.track({ email: currentUser.email, joined_at: new Date().toISOString() });
+                }
             });
         }
 
         async function leaveRoomRealtime() {
             if (currentRoomChannel) {
-                try { await currentRoomChannel.untrack(); await sb.removeChannel(currentRoomChannel); }
+                try {
+                    // A função unsubscribe() cuida de remover o rastreamento e o canal.
+                    await currentRoomChannel.unsubscribe();
+                }
                 catch (error) { console.error('Erro ao sair do canal:', error); }
-                currentRoomChannel = null; participantsList.innerHTML = '';
+                finally {
+                    // Garante que a referência seja limpa, mesmo se o unsubscribe falhar.
+                    currentRoomChannel = null;
+                    participantsList.innerHTML = '';
+                }
             }
         }
+
+        /**
+         * Função auxiliar para encapsular a lógica de sair de uma sala e redefinir a UI
+         * para o estado do lobby. Garante a consistência e evita a duplicação de código.
+         */
+        async function leaveRoomAndGoToLobby() {
+            await leaveRoomRealtime();
+            await clearUserCurrentRoom();
+
+            // Redefine todo o estado local relacionado à sala e ao jogo
+            currentRoom = null;
+            gameStarted = false;
+            gameState = null;
+
+            // Limpa a UI específica da sala
+            document.getElementById('game-controls').innerHTML = '';
+            gameView.classList.add('hidden');
+            // Garante que a lista de participantes seja limpa para não vazar para a próxima sala
+            if (participantsList) participantsList.innerHTML = '';
+            if (modalParticipantsList) modalParticipantsList.innerHTML = '';
+
+
+            // Transiciona a UI de volta para o lobby
+            setRoomViewMode(false);
+            showView('lobby-view');
+        }
+
 
         createRoomBtn.addEventListener('click', async () => {
             toggleLoading(true);
@@ -1001,27 +994,36 @@
         leaveRoomBtn.addEventListener('click', async () => {
             toggleLoading(true);
             try {
-                await leaveRoomRealtime();
-                await clearUserCurrentRoom();
+                const isHost = currentUser && currentRoom && currentUser.id === currentRoom.creator_id;
 
-                // Limpa o estado da sala e do jogo
-                currentRoom = null;
-                gameStarted = false;
-                gameState = null;
-                document.getElementById('game-controls').innerHTML = '';
-                gameView.classList.add('hidden');
-                settingsBtn.classList.remove('hidden');
+                if (isHost && currentRoomChannel) {
+                    // Notifica a todos que a sala está fechando ANTES de realmente fechar.
+                    // Isso dá aos outros clientes a chance de receber a mensagem.
+                    await currentRoomChannel.send({
+                        type: 'broadcast',
+                        event: 'host_left_and_closed_room',
+                        payload: { message: 'O anfitrião encerrou a sala.' }
+                    });
 
-                setRoomViewMode(false);
-                showView('lobby-view');
-                showLobbyMessage('', false);
+                    // Deleta a sala do banco de dados, impedindo que novos jogadores entrem.
+                    const { error } = await sb.from('rooms').delete().eq('room_code', currentRoom.room_code);
+                    if (error) {
+                        // A limpeza de presença cuidará disso se a exclusão falhar, mas é bom registrar.
+                        console.error('Erro ao deletar a sala como anfitrião:', error.message);
+                    }
+                }
+
+                // A ação local de sair e voltar ao lobby é a mesma para anfitriões e jogadores.
+                await leaveRoomAndGoToLobby();
+                showLobbyMessage('', false); // Limpa mensagens de erro antigas no lobby.
+
             } catch (err) {
                 console.error("Erro ao sair da sala:", err);
-                // Mesmo que haja erro, a melhor ação é voltar ao lobby
-                showView('lobby-view');
+                // Força a volta ao lobby mesmo em caso de erro.
+                await leaveRoomAndGoToLobby().catch(e => console.error("Falha ao forçar a saída para o lobby:", e));
                 showLobbyMessage("Ocorreu um erro ao sair da sala.", true);
             } finally {
-                toggleLoading(false);
+                toggleLoading(false); // Garante que o carregamento seja desativado.
             }
         });
 
@@ -1047,12 +1049,20 @@
             const nextPlayerId = turnOrder[nextIndex];
 
             // Atualiza o estado do jogo com o novo lance
+            const newBid = {
+                bidderId: currentUser.id,
+                quantity: quantity,
+                face: face,
+            };
+
             const updatedGameState = {
                 ...gameState,
                 currentBid: { quantity, face },
                 lastBidder: currentUser.id,
                 currentPlayer: nextPlayerId,
                 turn: gameState.turn + 1,
+                // Adiciona o novo lance ao histórico
+                bidHistory: [...gameState.bidHistory, newBid],
             };
 
             // Atualiza e transmite o estado
@@ -1185,6 +1195,7 @@
                 players: playersForNextRound,
                 currentBid: null,
                 lastBidder: null,
+                bidHistory: [], // Limpa o histórico para a nova rodada
                 turn: 1,
                 round: gameState.round + 1,
                 currentPlayer: gameState.roundInfo.loser,
