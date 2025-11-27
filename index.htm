@@ -848,35 +848,11 @@
             // Novo: Ouvinte para detectar quando um jogador sai
             currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                 const leavingPlayerId = key;
-
-                // Cenário 1: O anfitrião sai inesperadamente (fecha a aba).
-                if (currentRoom && leavingPlayerId === currentRoom.creator_id) {
-                    console.log('O anfitrião saiu inesperadamente.');
-
-                    // Lógica determinística para eleger um cliente para deletar a sala.
-                    // Isso evita que todos tentem deletar ao mesmo tempo.
-                    const presenceState = currentRoomChannel.presenceState();
-                    const remainingIds = Object.keys(presenceState).filter(id => id !== leavingPlayerId);
-                    remainingIds.sort(); // Ordena para garantir consistência
-
-                    if (remainingIds.length > 0 && currentUser && currentUser.id === remainingIds[0]) {
-                        console.log('Você foi eleito para deletar a sala.');
-                        // Deleta a sala do banco de dados.
-                        sb.from('rooms').delete().eq('room_code', currentRoom.room_code).then(({ error }) => {
-                            if (error) {
-                                console.error('Erro ao deletar a sala órfã:', error.message);
-                            } else {
-                                console.log('Sala órfã deletada com sucesso.');
-                            }
-                        });
-                    }
-
-                    // Todos os clientes restantes são enviados de volta ao lobby.
-                    showToast("O anfitrião saiu. A sala foi fechada.");
-                    if(leaveRoomBtn) leaveRoomBtn.click();
-
-                // Cenário 2: Um jogador que não é o anfitrião sai durante o jogo.
-                } else if (gameStarted && currentUser && currentRoom && currentUser.id === currentRoom.creator_id) {
+                // Se um jogador que não é o anfitrião sai durante um jogo, e o cliente atual é o anfitrião,
+                // o anfitrião atualiza o estado do jogo para remover o jogador que saiu.
+                // Se o anfitrião sair (leavingPlayerId === currentRoom.creator_id), nada acontece aqui,
+                // permitindo que ele se reconecte.
+                if (gameStarted && currentUser && currentRoom && currentUser.id === currentRoom.creator_id && leavingPlayerId !== currentRoom.creator_id) {
                     console.log(`O jogador ${leavingPlayerId} saiu. O anfitrião está atualizando o estado do jogo.`);
                     handleGameStateUpdateForLeavingPlayer(leavingPlayerId);
                 }
