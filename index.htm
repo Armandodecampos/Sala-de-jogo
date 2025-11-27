@@ -830,7 +830,17 @@
 
 
             currentRoomChannel.on('presence', { event: 'sync' }, () => {
-                handlePresenceSync(currentRoomChannel.presenceState());
+                 // A sincronização pode ser lenta. Se o anfitrião não estiver mais na lista de presença,
+                // significa que ele saiu. Para evitar que os jogadores fiquem presos,
+                // verificamos isso e os enviamos de volta ao lobby.
+                const presences = currentRoomChannel.presenceState();
+                if (currentRoom && !presences[currentRoom.creator_id]) {
+                    console.warn("Detectado que o anfitrião não está mais presente durante a sincronização. Fechando a sala.");
+                    showToast('O anfitrião desconectou-se. A sala foi fechada.');
+                    leaveRoomAndGoToLobby();
+                } else {
+                    handlePresenceSync(presences);
+                }
             });
 
             // Ouvinte para detectar quando um jogador sai (desconexão inesperada)
