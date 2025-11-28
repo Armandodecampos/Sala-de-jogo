@@ -183,49 +183,47 @@
 
             <!-- Tela do Jogo (Dado do Mentiroso) -->
             <div id="game-view" class="hidden h-full flex flex-col text-center">
-                <!-- Cabeçalho Fixo: Seus Dados -->
-                <div id="game-header" class="flex-shrink-0 p-4 bg-gray-100 border-b border-gray-300">
-                    <h3 class="font-bold text-lg mb-2">Seus dados</h3>
-                    <div id="my-dice-display" class="flex justify-center items-center space-x-2">
-                        <!-- SVGs dos dados aparecerão aqui -->
-                    </div>
-                </div>
+                 <!-- Informação do Turno -->
+                 <p class="text-sm mb-2">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
 
-                <!-- Conteúdo Rolável: Histórico de Apostas -->
-                <div id="game-bid-history" class="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-3">
-                    <!-- As "mensagens" de aposta aparecerão aqui -->
-                </div>
+                 <!-- Seus Dados -->
+                 <div class="mb-4">
+                     <h3 class="font-bold text-lg mb-2">Seus dados</h3>
+                     <div id="my-dice-display" class="flex justify-center items-center space-x-2">
+                         <!-- SVGs dos dados aparecerão aqui -->
+                     </div>
+                 </div>
 
-                <!-- Rodapé Fixo: Ações do Jogador -->
-                <div id="game-footer" class="flex-shrink-0 p-4 bg-gray-100 border-t border-gray-300">
-                     <!-- Informação do Turno -->
-                     <p class="text-sm mb-2">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
-                    <!-- Formulário de Lance -->
-                    <div id="bid-container" class="flex items-center justify-center gap-2 mb-2">
-                        <label for="bid-quantity" class="sr-only">Quantidade</label>
-                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
-                        <label for="bid-face" class="sr-only">Face do Dado</label>
-                        <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
-                            <option value="1">Dado 1</option>
-                            <option value="2">Dado 2</option>
-                            <option value="3">Dado 3</option>
-                            <option value="4">Dado 4</option>
-                            <option value="5">Dado 5</option>
-                            <option value="6">Dado 6</option>
-                        </select>
-                    </div>
-                    <!-- Ações de Duvidar/Apostar Lado a Lado -->
-                    <div class="flex gap-2">
-                        <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
-                        <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar</button>
-                        <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Confirmar</button>
-                    </div>
-                </div>
+                 <!-- Última Aposta -->
+                 <div id="last-bid-display" class="mb-4 p-2 bg-gray-100 rounded">
+                     <!-- A última aposta será mostrada aqui -->
+                 </div>
+
+                 <!-- Formulário de Lance -->
+                 <div id="bid-container" class="flex items-center justify-center gap-2 mb-2">
+                     <label for="bid-quantity" class="sr-only">Quantidade</label>
+                     <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
+                     <label for="bid-face" class="sr-only">Face do Dado</label>
+                     <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
+                         <option value="1">Dado 1</option>
+                         <option value="2">Dado 2</option>
+                         <option value="3">Dado 3</option>
+                         <option value="4">Dado 4</option>
+                         <option value="5">Dado 5</option>
+                         <option value="6">Dado 6</option>
+                     </select>
+                 </div>
+                 <!-- Ações de Duvidar/Apostar Lado a Lado -->
+                 <div class="flex gap-2">
+                     <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
+                     <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar</button>
+                     <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Confirmar</button>
+                 </div>
             </div>
 
             <!-- Overlays movidos para fora do #game-view para garantir que cubram a tela inteira -->
             <!-- Overlay de Resultado da Rodada -->
-            <div id="round-result-overlay" class="absolute inset-0 bg-white flex-col items-center justify-center hidden p-4 z-10">
+            <div id="round-result-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex-col items-center justify-center hidden p-4 z-10">
                 <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
                 <div id="all-dice-reveal" class="mb-4">
                     <!-- Dados de todos os jogadores serão mostrados aqui -->
@@ -385,6 +383,7 @@
         let currentUser = null;
         let currentRoomChannel = null;
         let currentRoom = null; // Armazena detalhes da sala atual { room_code, creator_id }
+        let activeChannelId = null; // NEW: ID para rastrear o canal de comunicação ativo
         let gameStarted = false; // Controla se o jogo começou
         let gameState = null; // Armazena o estado completo do jogo
         let presences = {}; // Armazena o estado de presença para mapear IDs para e-mails
@@ -576,34 +575,16 @@
                 roundResultOverlay.classList.add('hidden');
             }
 
-            // 2. Renderização do Cabeçalho (Seus Dados)
+            // 2. Renderização da UI Principal do Jogo
+            const currentPlayerEmail = presences[currentPlayer]?.[0].email || '...';
+            document.getElementById('current-player-email').textContent = currentPlayerEmail;
+
+            // Renderiza os dados do jogador atual
             const myDiceDisplay = document.getElementById('my-dice-display');
             myDiceDisplay.innerHTML = '';
             if (myPlayerState && myPlayerState.dice) {
                 myPlayerState.dice.forEach(d => {
                     myDiceDisplay.innerHTML += diceSVGTags[d];
-                });
-            }
-
-            // 3. Renderização do Conteúdo (Histórico de Apostas)
-            const bidHistoryContainer = document.getElementById('game-bid-history');
-            bidHistoryContainer.innerHTML = ''; // Limpa o histórico
-            if (bidHistory && bidHistory.length > 0) {
-                bidHistory.forEach(bid => {
-                    const bidderEmail = presences[bid.bidderId]?.[0].email || 'Alguém';
-                    const isSelf = bid.bidderId === currentUser.id;
-                    const messageClass = isSelf ? 'bg-blue-500 text-white self-end' : 'bg-gray-300 text-black self-start';
-
-                    const bidMessage = document.createElement('div');
-                    bidMessage.className = `rounded-lg p-3 max-w-xs ${messageClass}`;
-                    bidMessage.innerHTML = `
-                        <p class="font-bold text-sm">${bidderEmail}</p>
-                        <div class="flex items-center gap-2">
-                            <span>apostou ${bid.quantity} x</span>
-                            ${diceSVGTags[bid.face]}
-                        </div>
-                    `;
-                    bidHistoryContainer.appendChild(bidMessage);
                 });
             } else {
                  bidHistoryContainer.innerHTML = '<p class="text-center text-gray-500">Nenhuma aposta ainda. Faça a primeira!</p>';
@@ -611,10 +592,14 @@
              // Garante que o scroll fique sempre no final
             bidHistoryContainer.scrollTop = bidHistoryContainer.scrollHeight;
 
-
-            // 4. Renderização do Rodapé (Ações e Informações do Turno)
-            const currentPlayerEmail = presences[currentPlayer]?.[0].email || '...';
-            document.getElementById('current-player-email').textContent = currentPlayerEmail;
+            // Mostra o último lance
+            const lastBidDisplay = document.getElementById('last-bid-display');
+            if (currentBid) {
+                const bidderEmail = presences[gameState.lastBidder]?.[0].email || 'Alguém';
+                lastBidDisplay.innerHTML = `Última aposta por <strong>${bidderEmail}</strong>: ${currentBid.quantity} x ${diceSVGTags[currentBid.face]}`;
+            } else {
+                lastBidDisplay.innerHTML = 'Nenhuma aposta ainda. Faça a primeira!';
+            }
 
             // Habilita/desabilita ações com base no turno
             const isMyTurn = currentUser.id === currentPlayer;
@@ -805,10 +790,19 @@
         async function joinRoomRealtime(roomCode) {
             if (!currentUser) return;
             await leaveRoomRealtime();
+
+            // CORREÇÃO: Cria um ID único para este canal de comunicação.
+            const channelId = Date.now().toString();
+            activeChannelId = channelId; // Define este como o canal ativo.
+
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
+
+            // CORREÇÃO: "Marca" o canal com seu ID único.
+            currentRoomChannel.channelId = channelId;
 
             // Ouvinte para ATUALIZAÇÕES GERAIS DO JOGO
             currentRoomChannel.on('broadcast', { event: 'game_state_update' }, ({ payload }) => {
+                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
                 gameStarted = payload.gameStarted;
                 gameState = payload.gameState;
                 renderRoomUI();
@@ -817,6 +811,7 @@
 
             // NOVO: Ouvinte para quando o anfitrião fecha a sala intencionalmente
             currentRoomChannel.on('broadcast', { event: 'host_left_and_closed_room' }, ({ payload }) => {
+                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
                 showToast(payload.message || 'O anfitrião encerrou a sala.');
                 // Força a saída da sala e o retorno ao lobby
                 leaveRoomAndGoToLobby();
@@ -824,26 +819,16 @@
 
 
             currentRoomChannel.on('presence', { event: 'sync' }, () => {
-                 // A sincronização pode ser lenta. Se o anfitrião não estiver mais na lista de presença,
-                // significa que ele saiu. Para evitar que os jogadores fiquem presos,
-                // verificamos isso e os enviamos de volta ao lobby.
-                const presences = currentRoomChannel.presenceState();
-                if (currentRoom && !presences[currentRoom.creator_id]) {
-                    console.warn("Detectado que o anfitrião não está mais presente durante a sincronização. Fechando a sala.");
-                    showToast('O anfitrião desconectou-se. A sala foi fechada.');
-                    leaveRoomAndGoToLobby();
-                } else {
-                    handlePresenceSync(presences);
-                }
+                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
+                handlePresenceSync(currentRoomChannel.presenceState());
             });
 
             // Ouvinte para detectar quando um jogador sai (desconexão inesperada)
             currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                // Adiciona uma verificação para ignorar eventos de 'leave' de canais antigos.
-                // Isso previne uma condição de corrida onde sair de uma sala e criar outra
-                // rapidamente pode fazer com que o evento de saída da sala antiga feche a nova.
-                if (currentRoom?.room_code !== roomCode) {
-                    console.log(`Ignorando evento 'leave' obsoleto para a sala ${roomCode}. A sala atual é ${currentRoom?.room_code}.`);
+                // CORREÇÃO: A verificação agora compara o ID do canal, que é uma solução robusta
+                // contra a condição de corrida de eventos 'leave' atrasados de salas antigas.
+                if (currentRoomChannel.channelId !== activeChannelId) {
+                    console.log(`Ignorando evento 'leave' obsoleto do canal ${currentRoomChannel.channelId}. O canal ativo é ${activeChannelId}.`);
                     return;
                 }
 
