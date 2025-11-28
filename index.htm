@@ -303,6 +303,7 @@
                 currentPlayer: firstPlayerId, // O anfitrião (ou quem for definido) começa
                 currentBid: null, // Nenhum lance no início (ex: { quantity: 2, face: 3 })
                 lastBidder: null, // Quem fez o último lance
+                bidHistory: [], // NOVO: Armazena o histórico de lances da rodada
                 turn: 1,
                 round: 1,
                 gameWinner: null, // ID do vencedor final
@@ -530,7 +531,7 @@
         function renderGameUI() {
             if (!gameState || !currentUser) return;
 
-            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
+            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner, bidHistory } = gameState;
             const myPlayerState = players[currentUser.id];
 
             // Dicionário de SVGs para os dados
@@ -585,7 +586,11 @@
                 myPlayerState.dice.forEach(d => {
                     myDiceDisplay.innerHTML += diceSVGTags[d];
                 });
+            } else {
+                 bidHistoryContainer.innerHTML = '<p class="text-center text-gray-500">Nenhuma aposta ainda. Faça a primeira!</p>';
             }
+             // Garante que o scroll fique sempre no final
+            bidHistoryContainer.scrollTop = bidHistoryContainer.scrollHeight;
 
             // Mostra o último lance
             const lastBidDisplay = document.getElementById('last-bid-display');
@@ -1045,12 +1050,20 @@
             const nextPlayerId = turnOrder[nextIndex];
 
             // Atualiza o estado do jogo com o novo lance
+            const newBid = {
+                bidderId: currentUser.id,
+                quantity: quantity,
+                face: face,
+            };
+
             const updatedGameState = {
                 ...gameState,
                 currentBid: { quantity, face },
                 lastBidder: currentUser.id,
                 currentPlayer: nextPlayerId,
                 turn: gameState.turn + 1,
+                // Adiciona o novo lance ao histórico
+                bidHistory: [...gameState.bidHistory, newBid],
             };
 
             // Atualiza e transmite o estado
@@ -1183,6 +1196,7 @@
                 players: playersForNextRound,
                 currentBid: null,
                 lastBidder: null,
+                bidHistory: [], // Limpa o histórico para a nova rodada
                 turn: 1,
                 round: gameState.round + 1,
                 currentPlayer: gameState.roundInfo.loser,
