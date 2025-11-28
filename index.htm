@@ -170,11 +170,11 @@
             </button>
 
             <!-- CONTEÚDO ATUALIZADO DA SALA -->
-            <h2 id="room-code-title" class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
-            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6 hidden"></p>
+            <h2 id="room-code-title" class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
+            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6"></p>
 
-            <h3 id="participants-title" class="text-lg font-semibold text-gray-700 mb-3 hidden">Quem está na sala:</h3>
-            <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1 hidden">
+            <h3 id="participants-title" class="text-lg font-semibold text-gray-700 mb-3">Quem está na sala:</h3>
+            <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1">
                 <!-- Lista de participantes aparecerá aqui -->
             </ul>
 
@@ -240,7 +240,7 @@
                 <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
             </div>
 
-            <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6 hidden">Voltar ao Lobby</button>
+            <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6">Voltar ao Lobby</button>
         </div>
     </div>
 
@@ -359,8 +359,6 @@
         const pageBody = document.getElementById('page-body');
         const mainContainer = document.getElementById('main-container');
         const mainTitle = document.getElementById('main-title');
-        const roomCodeTitle = document.getElementById('room-code-title');
-        const participantsTitle = document.getElementById('participants-title');
         const hostIcon = document.getElementById('host-icon');
         // Referência da Notificação Toast
         const toastNotification = document.getElementById('toast-notification');
@@ -451,19 +449,17 @@
             // Controla a visibilidade dos elementos com base no estado do jogo
             const showLobby = !gameStarted;
             gameView.classList.toggle('hidden', showLobby);
-            roomCodeTitle.classList.toggle('hidden', !showLobby);
-            roomCodeDisplay.classList.toggle('hidden', !showLobby);
-            participantsTitle.classList.toggle('hidden', !showLobby);
-            participantsList.classList.toggle('hidden', !showLobby);
-            leaveRoomBtn.classList.toggle('hidden', !showLobby);
-            gameControlsContainer.classList.toggle('hidden', !showLobby);
+            // Elementos do lobby que precisam ser escondidos quando o jogo começa
+            ['room-code-title', 'room-code-display', 'participants-title', 'participants-list', 'leave-room-btn'].forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', !showLobby);
+            });
 
 
             if (showLobby && isHost) {
                 const gameButton = document.createElement('button');
                 gameButton.id = 'game-action-btn';
                 gameButton.textContent = 'Iniciar Jogo';
-                    gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-black text-white hover:bg-gray-800';
+                gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-black text-white hover:bg-gray-800';
                 gameButton.addEventListener('click', handleGameAction);
 
                 const participantCount = Object.keys(presences).length;
@@ -585,9 +581,7 @@
             myDiceDisplay.innerHTML = '';
             if (myPlayerState && myPlayerState.dice) {
                 myPlayerState.dice.forEach(d => {
-                    const dieDiv = document.createElement('div');
-                    dieDiv.innerHTML = diceSVGTags[d];
-                    myDiceDisplay.appendChild(dieDiv);
+                    myDiceDisplay.innerHTML += diceSVGTags[d];
                 });
             }
 
@@ -845,6 +839,14 @@
 
             // Ouvinte para detectar quando um jogador sai (desconexão inesperada)
             currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                // Adiciona uma verificação para ignorar eventos de 'leave' de canais antigos.
+                // Isso previne uma condição de corrida onde sair de uma sala e criar outra
+                // rapidamente pode fazer com que o evento de saída da sala antiga feche a nova.
+                if (currentRoom?.room_code !== roomCode) {
+                    console.log(`Ignorando evento 'leave' obsoleto para a sala ${roomCode}. A sala atual é ${currentRoom?.room_code}.`);
+                    return;
+                }
+
                 const leavingPlayerId = key;
                 if (leavingPlayerId === currentRoom?.creator_id) {
                     // Se o anfitrião sair inesperadamente, os clientes restantes limpam a sala
