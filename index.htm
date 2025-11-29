@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -33,7 +32,7 @@
         }
     </style>
 </head>
-<body id="page-body" class="bg-white text-black flex items-center justify-center min-h-screen">
+<body id="page-body" class="bg-gray-50 text-black flex items-center justify-center min-h-screen">
 
     <!-- SVG Definitions for Dice -->
     <svg width="0" height="0" style="position:absolute">
@@ -80,7 +79,7 @@
         </defs>
     </svg>
 
-    <!-- Container Principal -->
+    <!-- Container Principal (Aplica-se a Lobby e Auth) -->
     <div id="main-container" class="w-full max-w-md p-10 bg-white border border-gray-200 rounded-lg shadow-xl relative">
 
         <!-- Overlay de Carregamento -->
@@ -152,67 +151,80 @@
             <button id="logout-btn" class="w-full mt-8 text-gray-500 hover:text-red-500 text-sm transition duration-300">Sair</button>
         </div>
 
+        <!-- O CONTEÚDO DA SALA ABAIXO É REESTRUTURADO PARA O NOVO LAYOUT DE TELA CHEIA/JOGO -->
+
         <!-- #3: View da Sala (Dentro da Sala) -->
-        <div id="room-view" class="hidden relative h-full"> <!-- Adicionado 'relative' e 'h-full' para posicionar o botão -->
-            <!-- Ícone de Anfitrião (Coroa) -->
+        <!-- Flex-col e h-full para forçar o layout vertical e ocupar todo o espaço no modo full screen -->
+        <div id="room-view" class="hidden relative h-full flex flex-col"> 
+            
+            <!-- Ícone de Anfitrião (Coroa) - Mantido absoluto -->
             <div id="host-icon" class="absolute top-0 left-0 mt-2 ml-2 text-yellow-500 hidden z-20" title="Você é o anfitrião da sala">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 2a2 2 0 00-2 2v1.1a4 4 0 00-1 7.85V16a2 2 0 002 2h2a2 2 0 002-2v-3.05a4 4 0 00-1-7.85V4a2 2 0 00-2-2z" />
                     <path fill-rule="evenodd" d="M3 6a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
                 </svg>
             </div>
-            <!-- Botão de Engrenagem (Configurações) -->
+            
+            <!-- Botão de Engrenagem (Configurações) - Mantido absoluto -->
             <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black transition duration-300 z-20">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
             </button>
+            
+            <!-- CONTEÚDO DO LOBBY (VISÍVEL ANTES DE INICIAR O JOGO) -->
+            <div id="lobby-wait-content" class="flex-1 p-4 overflow-y-auto">
+                <h2 id="room-code-title" class="text-2xl font-bold text-center mb-4">Código da Sala:</h2>
+                <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6"></p>
 
-            <!-- CONTEÚDO ATUALIZADO DA SALA -->
-            <h2 id="room-code-title" class="text-2xl font-bold text-center mb-4 hidden">Código da Sala:</h2>
-            <p id="room-code-display" class="text-4xl font-mono font-bold text-center text-black bg-gray-200 rounded-lg py-4 mb-6 hidden"></p>
+                <h3 id="participants-title" class="text-lg font-semibold text-gray-700 mb-3">Quem está na sala:</h3>
+                <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1">
+                    <!-- Lista de participantes aparecerá aqui -->
+                </ul>
 
-            <h3 id="participants-title" class="text-lg font-semibold text-gray-700 mb-3 hidden">Quem está na sala:</h3>
-            <ul id="participants-list" class="list-disc list-inside bg-gray-200 p-4 rounded-lg min-h-[120px] text-gray-800 space-y-1 hidden">
-                <!-- Lista de participantes aparecerá aqui -->
-            </ul>
-
-            <!-- Controles do Jogo (Apenas para o Anfitrião) -->
-            <div id="game-controls" class="mt-6"></div>
-
-            <!-- Tela do Jogo (Dado do Mentiroso) -->
-            <div id="game-view" class="hidden mt-6 text-center">
-                <!-- Informações do Jogo -->
-                <div id="game-info" class="mb-4 p-4 bg-gray-200 rounded-lg">
-                    <p class="text-lg">Rodada <span id="round-number">1</span></p>
-                    <div id="current-bid-display" class="my-2">
-                        <p class="text-gray-600">Nenhum lance ainda. Faça o primeiro!</p>
-                    </div>
-                    <p class="text-sm">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
-                </div>
-
-                <!-- Lista de Jogadores -->
-                <div id="game-players-list" class="mb-4 flex flex-col gap-2 text-sm">
-                    <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
-                </div>
-
-                <!-- Dados do Jogador Atual -->
-                <div id="my-dice-area" class="mb-4 p-4 bg-gray-200 rounded-lg">
-                    <h3 class="font-bold mb-2">Seus Dados</h3>
-                    <div id="my-dice-display" class="flex justify-center items-center space-x-2 text-2xl">
-                        <!-- Ex: <span>&#9856;</span> <span>&#9857;</span> ... -->
+                <!-- Controles do Jogo (Apenas para o Anfitrião) -->
+                <div id="game-controls" class="mt-6"></div>
+                
+                <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6">Voltar ao Lobby</button>
+            </div>
+            
+            <!-- TELA DO JOGO (VISÍVEL APÓS INICIAR O JOGO) -->
+            <div id="game-view" class="hidden flex flex-col h-full">
+                
+                <!-- A. Barra do Topo (Fixo: Rodada e Status do Jogo) -->
+                <div id="top-bar" class="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-700 shadow-lg z-10">
+                    <h2 class="text-xl font-bold">Rodada <span id="round-number">1</span></h2>
+                    <!-- A lista de jogadores agora é um status resumido, que pode ser expandido no modal -->
+                    <div id="game-players-list" class="flex gap-2 text-sm">
+                        <!-- Ex: Player1(4), Player2(5) -->
                     </div>
                 </div>
 
-                <!-- Ações do Jogador -->
-                <div id="game-actions" class="space-y-4">
-                    <!-- Formulário de Lance -->
-                    <div id="bid-container" class="flex items-center justify-center gap-2">
+                <!-- B. Histórico de Jogadas (Rolagem: Chat-like) -->
+                <div id="history-container" class="flex-1 overflow-y-auto p-4 bg-gray-100 flex flex-col justify-end">
+                    <div id="history-messages" class="space-y-3">
+                        <!-- Mensagens de Lance e Turno (Chat-like) vão aqui -->
+                    </div>
+                </div>
+                
+                <!-- C. Área dos Dados do Jogador (Fixo) -->
+                <div id="my-dice-area-container" class="p-4 bg-gray-200 border-t border-gray-300 shadow-md z-10">
+                    <h3 class="font-bold mb-2 text-sm text-center">Seus Dados</h3>
+                    <div id="my-dice-display" class="flex justify-center items-center space-x-4 text-2xl h-10">
+                        <!-- Dados do Jogador (SVGs) -->
+                    </div>
+                </div>
+
+                <!-- D. Controles de Ação (Fixo: Botões de Aposta/Dúvida) -->
+                <div id="bottom-actions" class="p-4 bg-white border-t border-gray-300 shadow-xl z-10">
+                    
+                    <!-- Formulário de Lance (Inputs) -->
+                    <div id="bid-container" class="flex items-center justify-center gap-2 mb-4">
                         <label for="bid-quantity" class="sr-only">Quantidade</label>
-                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
+                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded-lg text-center" />
                         <label for="bid-face" class="sr-only">Face do Dado</label>
-                        <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
+                        <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded-lg">
                                 <option value="1">Dado 1</option>
                                 <option value="2">Dado 2</option>
                                 <option value="3">Dado 3</option>
@@ -222,7 +234,7 @@
                         </select>
                     </div>
 
-                    <!-- Ações de Duvidar/Apostar Lado a Lado -->
+                    <!-- Botões de Ações -->
                     <div class="flex gap-2">
                         <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
                         <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar</button>
@@ -231,23 +243,23 @@
                 </div>
 
                 <!-- Overlay de Resultado da Rodada -->
-                <div id="round-result-overlay" class="absolute inset-0 bg-white flex-col items-center justify-center hidden p-4 z-10">
-                    <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
-                    <div id="all-dice-reveal" class="mb-4">
+                <div id="round-result-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex-col items-center justify-center hidden p-4 z-50">
+                    <h2 id="round-result-message" class="text-2xl font-bold mb-4 text-center"></h2>
+                    <div id="all-dice-reveal" class="mb-4 p-4 border rounded-lg bg-gray-100 max-h-64 overflow-y-auto w-full max-w-sm">
                         <!-- Dados de todos os jogadores serão mostrados aqui -->
                     </div>
+                    <!-- Apenas exibe o botão "Próxima Rodada" para o anfitrião da sala -->
                     <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
                 </div>
 
                  <!-- Overlay de Fim de Jogo -->
-                 <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
-                    <h2 id="winner-message" class="text-3xl font-bold text-black mb-4"></h2>
+                 <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-50">
+                    <h2 id="winner-message" class="text-3xl font-bold text-black mb-4 text-center"></h2>
                     <p class="mb-6">O jogo terminou.</p>
                     <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
                 </div>
             </div>
-
-            <button id="leave-room-btn" class="w-full bg-gray-200 text-black font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md mt-6 hidden">Voltar ao Lobby</button>
+            
         </div>
     </div>
 
@@ -315,6 +327,7 @@
                 turn: 1,
                 round: 1,
                 gameWinner: null,
+                bidHistory: [], // NOVO: Armazena o histórico de lances
                 roundInfo: {
                     reveal: false,
                     bidder: null,
@@ -368,6 +381,7 @@
         const roomCodeTitle = document.getElementById('room-code-title');
         const participantsTitle = document.getElementById('participants-title');
         const hostIcon = document.getElementById('host-icon');
+        const lobbyWaitContent = document.getElementById('lobby-wait-content'); // Novo
         // Referência da Notificação Toast
         const toastNotification = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
@@ -388,6 +402,12 @@
         const exactBtn = document.getElementById('exact-btn');
         const nextRoundBtn = document.getElementById('next-round-btn');
         const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
+        // Novos Elementos da UI do Jogo (Estrutura V2)
+        const roundNumberDisplay = document.getElementById('round-number'); // Movido
+        const gamePlayersList = document.getElementById('game-players-list'); // Movido/Restruturado
+        const myDiceDisplay = document.getElementById('my-dice-display'); // Movido
+        const historyMessages = document.getElementById('history-messages'); // Novo
+        const historyContainer = document.getElementById('history-container'); // Novo para rolagem
 
         // --- 3. ESTADO DA APLICAÇÃO ---
         let currentUser = null;
@@ -426,14 +446,14 @@
             if (isFullScreen) {
                 // Remove as classes que centralizam e limitam a largura
                 pageBody.classList.remove('flex', 'items-center', 'justify-center', 'min-h-screen');
-                mainContainer.classList.remove('max-w-md', 'p-8', 'rounded-lg', 'shadow-xl');
+                mainContainer.classList.remove('max-w-md', 'p-10', 'rounded-lg', 'shadow-xl');
                 // Adiciona a classe para garantir que o contêiner ocupe toda a altura
-                mainContainer.classList.add('h-screen');
+                mainContainer.classList.add('h-screen', 'max-w-full', 'w-full', 'p-0');
             } else {
                 // Adiciona de volta as classes para centralizar e estilizar o contêiner
                 pageBody.classList.add('flex', 'items-center', 'justify-center', 'min-h-screen');
-                mainContainer.classList.add('max-w-md', 'p-8', 'rounded-lg', 'shadow-xl');
-                mainContainer.classList.remove('h-screen');
+                mainContainer.classList.add('max-w-md', 'p-10', 'rounded-lg', 'shadow-xl');
+                mainContainer.classList.remove('h-screen', 'max-w-full', 'w-full', 'p-0');
             }
         }
 
@@ -451,25 +471,20 @@
             // Mostra ou esconde o ícone de coroa se o jogador for o anfitrião.
             hostIcon.classList.toggle('hidden', !isHost);
 
-            const gameControlsContainer = document.getElementById('game-controls');
-            gameControlsContainer.innerHTML = '';
-
             // Controla a visibilidade dos elementos com base no estado do jogo
             const showLobby = !gameStarted;
+            lobbyWaitContent.classList.toggle('hidden', !showLobby);
             gameView.classList.toggle('hidden', showLobby);
-            roomCodeTitle.classList.toggle('hidden', !showLobby);
-            roomCodeDisplay.classList.toggle('hidden', !showLobby);
-            participantsTitle.classList.toggle('hidden', !showLobby);
-            participantsList.classList.toggle('hidden', !showLobby);
-            leaveRoomBtn.classList.toggle('hidden', !showLobby);
-            gameControlsContainer.classList.toggle('hidden', !showLobby);
+
+            const gameControlsContainer = document.getElementById('game-controls');
+            gameControlsContainer.innerHTML = '';
 
 
             if (showLobby && isHost) {
                 const gameButton = document.createElement('button');
                 gameButton.id = 'game-action-btn';
                 gameButton.textContent = 'Iniciar Jogo';
-                    gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-black text-white hover:bg-gray-800';
+                gameButton.className = 'w-full font-bold py-2 px-4 rounded-lg transition duration-300 bg-black text-white hover:bg-gray-800';
                 gameButton.addEventListener('click', handleGameAction);
 
                 const participantCount = Object.keys(presences).length;
@@ -530,6 +545,7 @@
             playerIds.sort();
             const newGameState = createInitialGameState(playerIds, playerIds[0]);
             newGameState.turnOrder = playerIds;
+            newGameState.bidHistory.push({ type: 'status', message: `O jogo começou! É a vez de ${presences[newGameState.currentPlayer]?.[0].email}.`});
 
             for (const playerId in newGameState.players) {
                 const player = newGameState.players[playerId];
@@ -554,7 +570,7 @@
                 6: '<svg class="w-8 h-8"><use href="#dice-6"></use></svg>',
             };
 
-             // Overlay de Fim de Jogo
+            // 1. Overlay de Fim de Jogo
             const gameOverOverlay = document.getElementById('game-over-overlay');
             if (gameWinner) {
                 const winnerEmail = presences[gameWinner]?.[0].email || 'O campeão';
@@ -565,7 +581,7 @@
                 gameOverOverlay.classList.add('hidden');
             }
 
-            // Controla a visibilidade do overlay de resultado
+            // 2. Controla a visibilidade do overlay de resultado
             const roundResultOverlay = document.getElementById('round-result-overlay');
             if (roundInfo && roundInfo.reveal) {
                 document.getElementById('round-result-message').textContent = roundInfo.message;
@@ -595,36 +611,58 @@
                 roundResultOverlay.classList.add('hidden');
             }
 
-            // Atualiza informações gerais
-            document.getElementById('round-number').textContent = round;
-            const currentPlayerEmail = presences[currentPlayer]?.[0].email || 'Desconhecido';
-            document.getElementById('current-player-email').textContent = currentPlayerEmail;
-
-            // Atualiza o lance atual
-            const bidDisplay = document.getElementById('current-bid-display');
-            if (currentBid) {
-                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><div class="flex items-center justify-center gap-2"><p class="text-2xl font-bold">${currentBid.quantity} x </p>${diceSVGTags[currentBid.face]}</div>`;
-            } else {
-                bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
-            }
-
-            // Atualiza a lista de jogadores na ordem de turno correta
-            const playersList = document.getElementById('game-players-list');
-            playersList.innerHTML = '';
+            // 3. Atualiza a Barra do Topo
+            roundNumberDisplay.textContent = round;
+            gamePlayersList.innerHTML = ''; // Lista resumida de jogadores
             gameState.turnOrder.forEach(playerId => {
                 const player = players[playerId];
-                // Se um jogador não tiver mais dados, ele é pulado na renderização.
                 if (!player || player.diceCount <= 0) return;
 
-                const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
-                const playerDiv = document.createElement('div');
-                playerDiv.className = `p-2 rounded ${playerId === currentPlayer ? 'bg-black text-white' : 'bg-gray-300'}`;
-                playerDiv.textContent = `${playerEmail} (${player.diceCount} ${player.diceCount === 1 ? 'dado' : 'dados'})`;
-                playersList.appendChild(playerDiv);
+                const playerEmail = presences[playerId]?.[0].email.split('@')[0] || 'Desconhecido';
+                const isCurrent = playerId === currentPlayer;
+                const statusSpan = document.createElement('span');
+                statusSpan.className = `text-sm font-semibold p-1 rounded ${isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-white'}`;
+                statusSpan.textContent = `${playerEmail}(${player.diceCount})`;
+                gamePlayersList.appendChild(statusSpan);
             });
 
-            // Atualiza os dados do jogador atual
-            const myDiceDisplay = document.getElementById('my-dice-display');
+            // 4. Atualiza o Histórico de Jogadas (Chat-like)
+            historyMessages.innerHTML = '';
+            gameState.bidHistory.forEach(item => {
+                const msgDiv = document.createElement('div');
+                if (item.type === 'bid') {
+                    const bidderEmail = presences[item.playerId]?.[0].email.split('@')[0] || 'Jogador';
+                    const isSelf = item.playerId === currentUser.id;
+
+                    // Exemplo: Maria apostou 1 dado face 3
+                    msgDiv.className = `p-3 rounded-lg max-w-[80%] ${isSelf ? 'bg-green-200 self-end' : 'bg-white shadow-sm'}`;
+                    
+                    const bidHtml = `<p class="text-sm font-semibold ${isSelf ? 'text-green-800' : 'text-black'}">${bidderEmail}:</p>
+                                    <div class="flex items-center gap-1">
+                                        <span class="font-bold text-lg">${item.quantity} x</span>
+                                        ${diceSVGTags[item.face]}
+                                    </div>`;
+                    msgDiv.innerHTML = bidHtml;
+                } else if (item.type === 'status') {
+                    // Mensagem de status (início de jogo, fim de rodada)
+                    msgDiv.className = `text-xs text-center text-gray-500 italic w-full`;
+                    msgDiv.textContent = item.message;
+                }
+                historyMessages.appendChild(msgDiv);
+            });
+
+            // Adiciona a mensagem do turno atual (sempre a última mensagem)
+            const currentPlayerEmail = presences[currentPlayer]?.[0].email.split('@')[0] || 'Desconhecido';
+            const turnMsgDiv = document.createElement('div');
+            turnMsgDiv.className = `text-center p-2 rounded-lg bg-yellow-300 font-bold text-sm mt-2`;
+            turnMsgDiv.textContent = `É a vez de ${currentPlayerEmail}`;
+            historyMessages.appendChild(turnMsgDiv);
+
+            // Rola para o final do histórico (o novo turno)
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+
+
+            // 5. Atualiza os dados do jogador atual
             myDiceDisplay.innerHTML = '';
             if (myPlayerState) {
                 myPlayerState.dice.forEach(d => {
@@ -634,7 +672,7 @@
                 });
             }
 
-            // Habilita/desabilita ações
+            // 6. Habilita/desabilita ações
             const isMyTurn = currentUser.id === currentPlayer;
             bidBtn.disabled = !isMyTurn;
             challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
@@ -686,6 +724,16 @@
                 console.log(`Era a vez de ${leavingPlayerId}. O turno agora é de ${updatedGameState.currentPlayer}.`);
             }
 
+            // Adiciona mensagem ao histórico
+            const leavingEmail = presences[leavingPlayerId]?.[0].email.split('@')[0] || 'Um jogador';
+            updatedGameState.bidHistory.push({ type: 'status', message: `${leavingEmail} saiu do jogo.`});
+            if (updatedGameState.gameWinner) {
+                 updatedGameState.bidHistory.push({ type: 'status', message: `O jogo terminou! ${presences[updatedGameState.gameWinner]?.[0].email.split('@')[0]} venceu.`});
+            } else {
+                updatedGameState.bidHistory.push({ type: 'status', message: `É a vez de ${presences[updatedGameState.currentPlayer]?.[0].email.split('@')[0]}.`});
+            }
+
+
             // Transmite o estado atualizado
             await updateAndBroadcastGameState(updatedGameState, true);
         }
@@ -719,7 +767,7 @@
                 } else {
                     console.log('Anfitrião atualizado com sucesso no banco de dados.');
                     // Transmite a mudança para todos os clientes, incluindo quem é o novo anfitrião.
-                    const newHostEmail = presenceState[newHostId]?.[0]?.email || 'um novo anfitrião';
+                    const newHostEmail = presenceState[newHostId]?.[0]?.email.split('@')[0] || 'um novo anfitrião';
                     await currentRoomChannel.send({
                         type: 'broadcast',
                         event: 'host_change',
@@ -790,8 +838,29 @@
 
         // --- 6. LÓGICA DO MODAL ---
         function openSettingsModal() {
-            modalRoomCode.textContent = roomCodeDisplay.textContent;
-            modalParticipantsList.innerHTML = participantsList.innerHTML;
+            modalRoomCode.textContent = currentRoom.room_code;
+            modalParticipantsList.innerHTML = '';
+            
+            // Renderiza a lista de participantes no modal
+            const participantIds = Object.keys(presences);
+            if (participantIds.length > 0) {
+                participantIds.forEach(id => {
+                    const presencesForId = presences[id];
+                    if (presencesForId.length > 0) {
+                        const email = presencesForId[0].email || 'Usuário anônimo';
+                        const isHost = id === currentRoom?.creator_id;
+                        const isSelf = id === currentUser?.id;
+
+                        const li = document.createElement('li');
+                        li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
+                        if (isSelf) li.classList.add('font-bold');
+                        modalParticipantsList.appendChild(li);
+                    }
+                });
+            } else {
+                modalParticipantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
+            }
+
 
             // Mostra os controles do anfitrião (Finalizar/Reiniciar Jogo) apenas se
             // o usuário for o anfitrião E o jogo tiver começado.
@@ -823,18 +892,22 @@
                 // Informa o anfitrião se a atualização falhar, mas continua mesmo assim
                 showToast(`Erro ao finalizar o jogo: ${error.message}`);
             }
+            
+            const endedGameState = {
+                ...gameState,
+                gameWinner: null, // Define como nulo para mostrar a tela de Fim de Jogo simples
+                bidHistory: [...gameState.bidHistory, { type: 'status', message: `${presences[currentUser.id]?.[0].email.split('@')[0]} finalizou o jogo.`}]
+            };
 
-            await updateAndBroadcastGameState(null, false);
+            await updateAndBroadcastGameState(endedGameState, false);
             showView('room-view');
         });
-
-
 
 
         // --- 7. LÓGICA DAS SALAS (COM REALTIME) ---
         function handlePresenceSync(newState) {
             presences = newState; // Armazena o estado de presença mais recente
-            const listToUpdate = [participantsList, modalParticipantsList];
+            const listToUpdate = [participantsList]; // A lista do modal é atualizada ao abrir
 
             listToUpdate.forEach(list => {
                 list.innerHTML = ''; // Limpa a lista antes de atualizar
@@ -861,6 +934,7 @@
 
             // Atualiza a UI da sala (ex: habilitar/desabilitar botão de iniciar)
             renderRoomUI();
+            if (gameStarted) renderGameUI(); // Re-renderiza o status dos jogadores no topo
         }
 
         async function joinRoomRealtime(roomCode) {
@@ -1036,15 +1110,26 @@
             const { currentBid } = gameState;
             if (currentBid) {
                 if (quantity < currentBid.quantity || (quantity === currentBid.quantity && face <= currentBid.face)) {
-                    alert("Seu lance deve ser maior que o lance atual.");
+                    // Substitui alert() por showToast()
+                    showToast("Seu lance deve ser maior que o lance atual.");
                     return;
                 }
             }
              // Determina o próximo jogador usando a ordem de turno oficial
             const { turnOrder } = gameState;
             const currentIndex = turnOrder.indexOf(currentUser.id);
-            const nextIndex = (currentIndex + 1) % turnOrder.length;
-            const nextPlayerId = turnOrder[nextIndex];
+            // Filtra jogadores com 0 dados (eles são pulados no turno)
+            const activePlayers = turnOrder.filter(id => gameState.players[id] && gameState.players[id].diceCount > 0);
+            const activeIndex = activePlayers.indexOf(currentUser.id);
+            const nextActiveIndex = (activeIndex + 1) % activePlayers.length;
+            const nextPlayerId = activePlayers[nextActiveIndex];
+
+
+            // Adiciona o lance ao histórico
+            const newHistory = [...gameState.bidHistory];
+            newHistory.push({ type: 'bid', playerId: currentUser.id, quantity, face });
+            newHistory.push({ type: 'status', message: `É a vez de ${presences[nextPlayerId]?.[0].email.split('@')[0]}.`});
+
 
             // Atualiza o estado do jogo com o novo lance
             const updatedGameState = {
@@ -1053,6 +1138,7 @@
                 lastBidder: currentUser.id,
                 currentPlayer: nextPlayerId,
                 turn: gameState.turn + 1,
+                bidHistory: newHistory, // Atualiza o histórico
             };
 
             // Atualiza e transmite o estado
@@ -1077,22 +1163,32 @@
 
             if (bidWasExact) {
                 // O jogador acertou, todos os outros perdem um dado
-                roundMessage = `${presences[bidderId]?.[0].email} CRAVOU! Havia exatamente ${actualQuantity} dados de face ${currentBid.face}. Todos os outros jogadores perdem um dado.`;
+                roundMessage = `${presences[bidderId]?.[0].email.split('@')[0]} CRAVOU! Havia exatamente ${actualQuantity} dados de face ${currentBid.face}. Todos os outros jogadores perdem um dado.`;
                 for (const playerId in updatedPlayers) {
                     if (playerId !== bidderId) {
-                        updatedPlayers[playerId].diceCount--;
+                        updatedPlayers[playerId].diceCount = Math.max(0, updatedPlayers[playerId].diceCount - 1);
                     }
                 }
+                // O próximo a jogar é o que deu o lance (bidderId)
+                loserForNextRound = bidderId;
             } else {
                 // O jogador errou e perde um dado
-                updatedPlayers[bidderId].diceCount--;
-                roundMessage = `${presences[bidderId]?.[0].email} errou! Havia ${actualQuantity} dados de face ${currentBid.face}, não ${currentBid.quantity}. Ele perde um dado.`;
+                updatedPlayers[bidderId].diceCount = Math.max(0, updatedPlayers[bidderId].diceCount - 1);
+                roundMessage = `${presences[bidderId]?.[0].email.split('@')[0]} errou! Havia ${actualQuantity} dados de face ${currentBid.face}, não ${currentBid.quantity}. Ele perde um dado.`;
+                // O próximo a jogar é o perdedor do lance (bidderId)
+                loserForNextRound = bidderId;
             }
+            
+            // Adiciona mensagem ao histórico
+            const newHistory = [...gameState.bidHistory];
+            newHistory.push({ type: 'status', message: roundMessage});
+
 
             // 3. Preparar o estado atualizado do jogo para a revelação
             const updatedGameState = {
                 ...gameState,
                 players: updatedPlayers,
+                bidHistory: newHistory, // Atualiza o histórico
                 roundInfo: {
                     reveal: true,
                     bidder: bidderId,
@@ -1108,7 +1204,7 @@
         });
 
         challengeBtn.addEventListener('click', async () => {
-            if (!gameState || currentUser.id !== gameState.currentPlayer) return;
+            if (!gameState || currentUser.id !== gameState.currentPlayer || !gameState.currentBid) return;
 
             const { players, currentBid, lastBidder } = gameState;
             const challenger = currentUser.id;
@@ -1123,15 +1219,21 @@
 
             // 3. Atualizar o estado do jogo
             const updatedPlayers = { ...players };
-            updatedPlayers[loser].diceCount--;
+            updatedPlayers[loser].diceCount = Math.max(0, updatedPlayers[loser].diceCount - 1);
 
             const roundMessage = bidWasCorrect ?
-                `O lance era VERDADEIRO! Havia ${actualQuantity} dados de face ${currentBid.face}. ${presences[challenger]?.[0].email} perde um dado.` :
-                `O lance era FALSO! Havia apenas ${actualQuantity} dados de face ${currentBid.face}. ${presences[lastBidder]?.[0].email} perde um dado.`;
+                `O lance era VERDADEIRO! Havia ${actualQuantity} dados de face ${currentBid.face}. ${presences[challenger]?.[0].email.split('@')[0]} perde um dado.` :
+                `O lance era FALSO! Havia apenas ${actualQuantity} dados de face ${currentBid.face}. ${presences[lastBidder]?.[0].email.split('@')[0]} perde um dado.`;
+
+            // Adiciona mensagem ao histórico
+            const newHistory = [...gameState.bidHistory];
+            newHistory.push({ type: 'status', message: `${presences[challenger]?.[0].email.split('@')[0]} DUVIDOU!`});
+            newHistory.push({ type: 'status', message: roundMessage});
 
             const updatedGameState = {
                 ...gameState,
                 players: updatedPlayers,
+                bidHistory: newHistory, // Atualiza o histórico
                 roundInfo: {
                     reveal: true,
                     bidder: lastBidder,
@@ -1159,13 +1261,19 @@
             const remainingPlayers = Object.entries(gameState.players).filter(([id, player]) => player.diceCount > 0);
             if (remainingPlayers.length <= 1) {
                 const winnerId = remainingPlayers.length === 1 ? remainingPlayers[0][0] : null;
-                const finalGameState = { ...gameState, gameWinner: winnerId };
-
+                
                 // O anfitrião atualiza o banco de dados para indicar que o jogo terminou
                 const { error } = await sb.from('rooms').update({ game_started: false }).eq('room_code', currentRoom.room_code);
                 if (error) {
                     showToast(`Erro ao finalizar o jogo: ${error.message}`);
                 }
+                
+                const finalGameState = { 
+                    ...gameState, 
+                    gameWinner: winnerId,
+                    bidHistory: [...gameState.bidHistory, { type: 'status', message: `Fim do Jogo! ${winnerId ? presences[winnerId]?.[0].email.split('@')[0] + ' venceu.' : 'Empate'}`}]
+                };
+
 
                 await updateAndBroadcastGameState(finalGameState, false);
                 return;
@@ -1173,23 +1281,32 @@
 
             // 2. Preparar a próxima rodada
             const playersForNextRound = { ...gameState.players };
-            // Remove jogadores com 0 dados
+            const currentTurnOrder = [...gameState.turnOrder];
+
+            // Remove jogadores com 0 dados e da ordem de turno
+            let newTurnOrder = [...currentTurnOrder];
             for (const playerId in playersForNextRound) {
                 if (playersForNextRound[playerId].diceCount <= 0) {
                     delete playersForNextRound[playerId];
+                    newTurnOrder = newTurnOrder.filter(id => id !== playerId);
                 }
             }
+
 
             const nextRoundState = {
                 ...gameState,
                 players: playersForNextRound,
+                turnOrder: newTurnOrder, // Garante que a ordem de turno esteja atualizada
                 currentBid: null,
                 lastBidder: null,
                 turn: 1,
                 round: gameState.round + 1,
                 currentPlayer: gameState.roundInfo.loser,
                 roundInfo: { reveal: false, message: '' },
+                bidHistory: [], // Limpa o histórico de lances para a nova rodada
             };
+            
+            nextRoundState.bidHistory.push({ type: 'status', message: `Rodada ${nextRoundState.round} começou! É a vez de ${presences[nextRoundState.currentPlayer]?.[0].email.split('@')[0]}.`});
 
             // Rola novos dados para os jogadores restantes
             for (const playerId in nextRoundState.players) {
