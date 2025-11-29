@@ -182,68 +182,72 @@
             <div id="game-controls" class="mt-6"></div>
 
             <!-- Tela do Jogo (Dado do Mentiroso) -->
-            <div id="game-view" class="hidden mt-6 text-center">
-                <!-- Informações do Jogo -->
-                <div id="game-info" class="mb-4 p-4 bg-gray-200 rounded-lg">
-                    <p class="text-lg">Rodada <span id="round-number">1</span></p>
-                    <div id="current-bid-display" class="my-2">
-                        <p class="text-gray-600">Nenhum lance ainda. Faça o primeiro!</p>
+            <div id="game-view" class="hidden h-full flex flex-col text-center">
+
+                <!-- 1. Top Bar (Fixo) -->
+                <div id="game-top-bar" class="flex-shrink-0 p-2 border-b-2 border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Rodada <span id="round-number">1</span></h2>
+                    <!-- O botão de configurações já existe fora desta view, ele será sobreposto aqui -->
+                </div>
+
+                <!-- 2. Área de Conteúdo (Rolável) -->
+                <div class="flex-grow overflow-y-auto p-4 space-y-4">
+                    <!-- 2.1. Histórico de Lances (Chat) -->
+                    <div id="bid-history" class="w-full text-left space-y-2">
+                        <!-- Mensagens de lance aparecerão aqui, ex: -->
+                        <!-- <p class="text-sm"><span class="font-bold">você:</span> apostou 2 x 🎲3</p> -->
+                        <!-- <p class="text-sm text-gray-500"><span class="font-bold">adversário:</span> apostou 3 x 🎲4</p> -->
                     </div>
-                    <p class="text-sm">É a vez de: <span id="current-player-email" class="font-bold"></span></p>
+                     <!-- 2.2. Lista de Jogadores -->
+                    <div id="game-players-list" class="flex flex-col gap-2 text-sm">
+                        <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
+                    </div>
                 </div>
 
-                <!-- Lista de Jogadores -->
-                <div id="game-players-list" class="mb-4 flex flex-col gap-2 text-sm">
-                    <!-- Ex: <div class="p-2 bg-gray-300 rounded">Player1@email.com (5 dados)</div> -->
-                </div>
-
-                <!-- Dados do Jogador Atual -->
-                <div id="my-dice-area" class="mb-4 p-4 bg-gray-200 rounded-lg">
+                <!-- 3. Área dos Dados do Jogador (Fixa) -->
+                <div id="my-dice-area" class="flex-shrink-0 p-4 bg-gray-100 border-t-2 border-gray-200">
                     <h3 class="font-bold mb-2">Seus Dados</h3>
-                    <div id="my-dice-display" class="flex justify-center items-center space-x-2 text-2xl">
-                        <!-- Ex: <span>&#9856;</span> <span>&#9857;</span> ... -->
+                    <div id="my-dice-display" class="flex justify-center items-center space-x-2">
+                        <!-- SVGs dos dados aparecerão aqui -->
                     </div>
                 </div>
 
-                <!-- Ações do Jogador -->
-                <div id="game-actions" class="space-y-4">
+                <!-- 4. Barra de Ações (Fixa) -->
+                <div id="game-actions-bar" class="flex-shrink-0 p-2 border-t-2 border-gray-200 space-y-2">
                     <!-- Formulário de Lance -->
                     <div id="bid-container" class="flex items-center justify-center gap-2">
-                        <label for="bid-quantity" class="sr-only">Quantidade</label>
                         <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded" />
-                        <label for="bid-face" class="sr-only">Face do Dado</label>
                         <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded">
-                                <option value="1">Dado 1</option>
-                                <option value="2">Dado 2</option>
-                                <option value="3">Dado 3</option>
-                                <option value="4">Dado 4</option>
-                                <option value="5">Dado 5</option>
-                                <option value="6">Dado 6</option>
+                            <option value="1">Face 1</option>
+                            <option value="2">Face 2</option>
+                            <option value="3">Face 3</option>
+                            <option value="4">Face 4</option>
+                            <option value="5">Face 5</option>
+                            <option value="6">Face 6</option>
                         </select>
                     </div>
-
-                    <!-- Ações de Duvidar/Apostar Lado a Lado -->
+                    <!-- Botões de Ação -->
                     <div class="flex gap-2">
-                        <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
-                        <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar</button>
-                        <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Confirmar</button>
+                        <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg">Apostar</button>
+                        <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg" disabled>Duvidar</button>
+                        <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg" disabled>Confirmar</button>
                     </div>
                 </div>
 
-                <!-- Overlay de Resultado da Rodada -->
+                <!-- Overlay de Resultado da Rodada (Sobrepõe tudo) -->
                 <div id="round-result-overlay" class="absolute inset-0 bg-white flex-col items-center justify-center hidden p-4 z-10">
                     <h2 id="round-result-message" class="text-2xl font-bold mb-4"></h2>
                     <div id="all-dice-reveal" class="mb-4">
                         <!-- Dados de todos os jogadores serão mostrados aqui -->
                     </div>
-                    <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Próxima Rodada</button>
+                    <button id="next-round-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg">Próxima Rodada</button>
                 </div>
 
-                 <!-- Overlay de Fim de Jogo -->
-                 <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
+                <!-- Overlay de Fim de Jogo (Sobrepõe tudo) -->
+                <div id="game-over-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-10">
                     <h2 id="winner-message" class="text-3xl font-bold text-black mb-4"></h2>
                     <p class="mb-6">O jogo terminou.</p>
-                    <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">Voltar para o Lobby</button>
+                    <button id="back-to-lobby-btn" class="bg-black text-white font-bold py-3 px-6 rounded-lg">Voltar para o Lobby</button>
                 </div>
             </div>
 
@@ -315,6 +319,7 @@
                 turn: 1,
                 round: 1,
                 gameWinner: null,
+                bidHistory: [], // Armazena o histórico de lances da rodada
                 roundInfo: {
                     reveal: false,
                     bidder: null,
@@ -539,22 +544,52 @@
             await updateAndBroadcastGameState(newGameState, true);
         }
 
+        function renderBidHistory(bidHistory, diceSVGTags) {
+            const historyContainer = document.getElementById('bid-history');
+            historyContainer.innerHTML = ''; // Limpa o histórico anterior
+
+            if (!bidHistory || bidHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum lance ainda. Faça o primeiro!</p>';
+                return;
+            }
+
+            bidHistory.forEach(bid => {
+                const playerEmail = presences[bid.playerId]?.[0].email || 'Jogador';
+                const isSelf = bid.playerId === currentUser.id;
+                const diceIcon = diceSVGTags[bid.face] || `Face ${bid.face}`;
+
+                const p = document.createElement('p');
+                p.className = `text-sm ${isSelf ? 'text-black' : 'text-gray-600'}`;
+                p.innerHTML = `<span class="font-bold">${isSelf ? 'Você' : playerEmail}:</span> apostou ${bid.quantity} x <span class="inline-block align-middle">${diceIcon}</span>`;
+                historyContainer.appendChild(p);
+            });
+             // Adiciona a mensagem "É a vez de..."
+            const currentPlayerEmail = presences[gameState.currentPlayer]?.[0].email || 'Desconhecido';
+            const turnIndicator = document.createElement('p');
+            turnIndicator.className = 'text-center font-bold text-black pt-2';
+            turnIndicator.textContent = `É a vez de ${currentPlayerEmail}.`;
+            historyContainer.appendChild(turnIndicator);
+
+            // Rola para o final do histórico
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+        }
+
         function renderGameUI() {
             if (!gameState || !currentUser) return;
 
-            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
+            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner, bidHistory } = gameState;
             const myPlayerState = players[currentUser.id];
 
             const diceSVGTags = {
-                1: '<svg class="w-8 h-8"><use href="#dice-1"></use></svg>',
-                2: '<svg class="w-8 h-8"><use href="#dice-2"></use></svg>',
-                3: '<svg class="w-8 h-8"><use href="#dice-3"></use></svg>',
-                4: '<svg class="w-8 h-8"><use href="#dice-4"></use></svg>',
-                5: '<svg class="w-8 h-8"><use href="#dice-5"></use></svg>',
-                6: '<svg class="w-8 h-8"><use href="#dice-6"></use></svg>',
+                1: '<svg class="w-6 h-6"><use href="#dice-1"></use></svg>',
+                2: '<svg class="w-6 h-6"><use href="#dice-2"></use></svg>',
+                3: '<svg class="w-6 h-6"><use href="#dice-3"></use></svg>',
+                4: '<svg class="w-6 h-6"><use href="#dice-4"></use></svg>',
+                5: '<svg class="w-6 h-6"><use href="#dice-5"></use></svg>',
+                6: '<svg class="w-6 h-6"><use href="#dice-6"></use></svg>',
             };
 
-             // Overlay de Fim de Jogo
+            // Overlay de Fim de Jogo
             const gameOverOverlay = document.getElementById('game-over-overlay');
             if (gameWinner) {
                 const winnerEmail = presences[gameWinner]?.[0].email || 'O campeão';
@@ -565,55 +600,38 @@
                 gameOverOverlay.classList.add('hidden');
             }
 
-            // Controla a visibilidade do overlay de resultado
+            // Controla a visibilidade do overlay de resultado da rodada
             const roundResultOverlay = document.getElementById('round-result-overlay');
             if (roundInfo && roundInfo.reveal) {
                 document.getElementById('round-result-message').textContent = roundInfo.message;
                 const allDiceReveal = document.getElementById('all-dice-reveal');
-                allDiceReveal.innerHTML = ''; // Limpa a revelação anterior
+                allDiceReveal.innerHTML = '';
 
-                // Agrupa os dados por jogador
-                const diceByPlayer = {};
-                for (const pId in players) {
-                    diceByPlayer[pId] = players[pId].dice;
-                }
-
-                for (const playerId in diceByPlayer) {
+                for (const playerId in players) {
                     const playerEmail = presences[playerId]?.[0].email || 'Jogador';
-                    const diceHtml = diceByPlayer[playerId].map(d => diceSVGTags[d]).join(' ');
+                    const diceHtml = players[playerId].dice.map(d => diceSVGTags[d]).join(' ');
                     allDiceReveal.innerHTML += `<div class="mb-2"><p class="font-semibold">${playerEmail}:</p><div class="flex justify-center gap-2">${diceHtml}</div></div>`;
                 }
 
-                // Apenas exibe o botão "Próxima Rodada" para o anfitrião da sala
                 const isHost = currentUser && currentRoom && currentUser.id === currentRoom.creator_id;
                 nextRoundBtn.classList.toggle('hidden', !isHost);
-
-
                 roundResultOverlay.classList.remove('hidden');
-                return; // Pausa a renderização do resto da UI do jogo
+                return;
             } else {
                 roundResultOverlay.classList.add('hidden');
             }
 
-            // Atualiza informações gerais
+            // --- Renderização da Nova UI ---
+
+            // 1. Top Bar
             document.getElementById('round-number').textContent = round;
-            const currentPlayerEmail = presences[currentPlayer]?.[0].email || 'Desconhecido';
-            document.getElementById('current-player-email').textContent = currentPlayerEmail;
 
-            // Atualiza o lance atual
-            const bidDisplay = document.getElementById('current-bid-display');
-            if (currentBid) {
-                bidDisplay.innerHTML = `<p class="text-gray-300">Último lance:</p><div class="flex items-center justify-center gap-2"><p class="text-2xl font-bold">${currentBid.quantity} x </p>${diceSVGTags[currentBid.face]}</div>`;
-            } else {
-                bidDisplay.innerHTML = `<p class="text-gray-400">Nenhum lance ainda. Faça o primeiro!</p>`;
-            }
-
-            // Atualiza a lista de jogadores na ordem de turno correta
+            // 2. Área de Conteúdo
+            renderBidHistory(bidHistory, diceSVGTags);
             const playersList = document.getElementById('game-players-list');
             playersList.innerHTML = '';
             gameState.turnOrder.forEach(playerId => {
                 const player = players[playerId];
-                // Se um jogador não tiver mais dados, ele é pulado na renderização.
                 if (!player || player.diceCount <= 0) return;
 
                 const playerEmail = presences[playerId]?.[0].email || 'Desconhecido';
@@ -623,21 +641,20 @@
                 playersList.appendChild(playerDiv);
             });
 
-            // Atualiza os dados do jogador atual
+
+            // 3. Área de Dados do Jogador
             const myDiceDisplay = document.getElementById('my-dice-display');
             myDiceDisplay.innerHTML = '';
             if (myPlayerState) {
                 myPlayerState.dice.forEach(d => {
-                    const dieDiv = document.createElement('div');
-                    dieDiv.innerHTML = diceSVGTags[d];
-                    myDiceDisplay.appendChild(dieDiv);
+                    myDiceDisplay.innerHTML += diceSVGTags[d];
                 });
             }
 
-            // Habilita/desabilita ações
+            // 4. Barra de Ações
             const isMyTurn = currentUser.id === currentPlayer;
             bidBtn.disabled = !isMyTurn;
-            challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
+            challengeBtn.disabled = !isMyTurn || !currentBid;
             exactBtn.disabled = !isMyTurn || !currentBid;
         }
 
@@ -1046,13 +1063,21 @@
             const nextIndex = (currentIndex + 1) % turnOrder.length;
             const nextPlayerId = turnOrder[nextIndex];
 
-            // Atualiza o estado do jogo com o novo lance
+            // Cria um novo objeto de lance para o histórico
+            const newBid = {
+                playerId: currentUser.id,
+                quantity: quantity,
+                face: face,
+            };
+
+            // Atualiza o estado do jogo com o novo lance e adiciona ao histórico
             const updatedGameState = {
                 ...gameState,
                 currentBid: { quantity, face },
                 lastBidder: currentUser.id,
                 currentPlayer: nextPlayerId,
                 turn: gameState.turn + 1,
+                bidHistory: [...(gameState.bidHistory || []), newBid], // Adiciona o novo lance ao histórico
             };
 
             // Atualiza e transmite o estado
@@ -1188,6 +1213,7 @@
                 turn: 1,
                 round: gameState.round + 1,
                 currentPlayer: gameState.roundInfo.loser,
+                bidHistory: [], // Limpa o histórico para a nova rodada
                 roundInfo: { reveal: false, message: '' },
             };
 
