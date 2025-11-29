@@ -303,6 +303,7 @@
                 currentPlayer: firstPlayerId, // O anfitrião (ou quem for definido) começa
                 currentBid: null, // Nenhum lance no início (ex: { quantity: 2, face: 3 })
                 lastBidder: null, // Quem fez o último lance
+                bidHistory: [], // NOVO: Armazena o histórico de lances da rodada
                 turn: 1,
                 round: 1,
                 gameWinner: null, // ID do vencedor final
@@ -382,6 +383,7 @@
         let currentUser = null;
         let currentRoomChannel = null;
         let currentRoom = null; // Armazena detalhes da sala atual { room_code, creator_id }
+        let activeChannelId = null; // NEW: ID para rastrear o canal de comunicação ativo
         let gameStarted = false; // Controla se o jogo começou
         let gameState = null; // Armazena o estado completo do jogo
         let presences = {}; // Armazena o estado de presença para mapear IDs para e-mails
@@ -529,7 +531,7 @@
         function renderGameUI() {
             if (!gameState || !currentUser) return;
 
-            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner } = gameState;
+            const { players, currentPlayer, currentBid, round, roundInfo, gameWinner, bidHistory } = gameState;
             const myPlayerState = players[currentUser.id];
 
             // Dicionário de SVGs para os dados
@@ -584,6 +586,19 @@
                 myPlayerState.dice.forEach(d => {
                     myDiceDisplay.innerHTML += diceSVGTags[d];
                 });
+            } else {
+                 bidHistoryContainer.innerHTML = '<p class="text-center text-gray-500">Nenhuma aposta ainda. Faça a primeira!</p>';
+            }
+             // Garante que o scroll fique sempre no final
+            bidHistoryContainer.scrollTop = bidHistoryContainer.scrollHeight;
+
+            // Mostra o último lance
+            const lastBidDisplay = document.getElementById('last-bid-display');
+            if (currentBid) {
+                const bidderEmail = presences[gameState.lastBidder]?.[0].email || 'Alguém';
+                lastBidDisplay.innerHTML = `Última aposta por <strong>${bidderEmail}</strong>: ${currentBid.quantity} x ${diceSVGTags[currentBid.face]}`;
+            } else {
+                lastBidDisplay.innerHTML = 'Nenhuma aposta ainda. Faça a primeira!';
             }
 
             // Mostra o último lance
@@ -784,12 +799,21 @@
         async function joinRoomRealtime(roomCode) {
             if (!currentUser) return;
             await leaveRoomRealtime();
+
+            // CORREÇÃO: Cria um ID único para este canal de comunicação.
+            const channelId = Date.now().toString();
+            activeChannelId = channelId; // Define este como o canal ativo.
+
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
             // CORREÇÃO: Armazena o timestamp de criação para o "grace period".
             currentRoomChannel.createdAt = Date.now();
 
+            // CORREÇÃO: "Marca" o canal com seu ID único.
+            currentRoomChannel.channelId = channelId;
+
             // Ouvinte para ATUALIZAÇÕES GERAIS DO JOGO
             currentRoomChannel.on('broadcast', { event: 'game_state_update' }, ({ payload }) => {
+                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
                 gameStarted = payload.gameStarted;
                 gameState = payload.gameState;
                 renderRoomUI();
@@ -809,6 +833,13 @@
 
             // Ouvinte para detectar quando um jogador sai (desconexão inesperada)
             currentRoomChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                // CORREÇÃO: A verificação agora compara o ID do canal, que é uma solução robusta
+                // contra a condição de corrida de eventos 'leave' atrasados de salas antigas.
+                if (currentRoomChannel.channelId !== activeChannelId) {
+                    console.log(`Ignorando evento 'leave' obsoleto do canal ${currentRoomChannel.channelId}. O canal ativo é ${activeChannelId}.`);
+                    return;
+                }
+
                 const leavingPlayerId = key;
                 if (leavingPlayerId === currentRoom?.creator_id) {
                      // CORREÇÃO: Implementa um "grace period" de 1.5 segundos.
@@ -1033,12 +1064,20 @@
             const nextPlayerId = turnOrder[nextIndex];
 
             // Atualiza o estado do jogo com o novo lance
+            const newBid = {
+                bidderId: currentUser.id,
+                quantity: quantity,
+                face: face,
+            };
+
             const updatedGameState = {
                 ...gameState,
                 currentBid: { quantity, face },
                 lastBidder: currentUser.id,
                 currentPlayer: nextPlayerId,
                 turn: gameState.turn + 1,
+                // Adiciona o novo lance ao histórico
+                bidHistory: [...gameState.bidHistory, newBid],
             };
 
             // Atualiza e transmite o estado
@@ -1171,6 +1210,7 @@
                 players: playersForNextRound,
                 currentBid: null,
                 lastBidder: null,
+                bidHistory: [], // Limpa o histórico para a nova rodada
                 turn: 1,
                 round: gameState.round + 1,
                 currentPlayer: gameState.roundInfo.loser,

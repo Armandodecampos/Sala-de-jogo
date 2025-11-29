@@ -91,7 +91,7 @@ window.supabase = {
                         return mockChannel;
                     },
                     track: async (payload) => {
-                        // Simula o rastreamento e a sincronização de presença
+                        // Simulate tracking and presence sync
                         setTimeout(() => {
                             if (mockChannel.callbacks && mockChannel.callbacks['sync']) {
                                 mockChannel.callbacks['sync']();
