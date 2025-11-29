@@ -544,31 +544,33 @@
             await updateAndBroadcastGameState(newGameState, true);
         }
 
-        function renderBidHistory(bidHistory, diceSVGTags) {
+        function renderBidHistory(bidHistory, diceSVGTags, gameState) {
             const historyContainer = document.getElementById('bid-history');
             historyContainer.innerHTML = ''; // Limpa o histórico anterior
 
             if (!bidHistory || bidHistory.length === 0) {
                 historyContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum lance ainda. Faça o primeiro!</p>';
-                return;
+            } else {
+                 bidHistory.forEach(bid => {
+                    const playerEmail = presences[bid.playerId]?.[0].email || 'Jogador';
+                    const isSelf = bid.playerId === currentUser.id;
+                    const diceIcon = diceSVGTags[bid.face] || `Face ${bid.face}`;
+
+                    const p = document.createElement('p');
+                    p.className = `text-sm ${isSelf ? 'text-black' : 'text-gray-600'}`;
+                    p.innerHTML = `<span class="font-bold">${isSelf ? 'Você' : playerEmail}:</span> apostou ${bid.quantity} x <span class="inline-block align-middle">${diceIcon}</span>`;
+                    historyContainer.appendChild(p);
+                });
             }
 
-            bidHistory.forEach(bid => {
-                const playerEmail = presences[bid.playerId]?.[0].email || 'Jogador';
-                const isSelf = bid.playerId === currentUser.id;
-                const diceIcon = diceSVGTags[bid.face] || `Face ${bid.face}`;
-
-                const p = document.createElement('p');
-                p.className = `text-sm ${isSelf ? 'text-black' : 'text-gray-600'}`;
-                p.innerHTML = `<span class="font-bold">${isSelf ? 'Você' : playerEmail}:</span> apostou ${bid.quantity} x <span class="inline-block align-middle">${diceIcon}</span>`;
-                historyContainer.appendChild(p);
-            });
-             // Adiciona a mensagem "É a vez de..."
-            const currentPlayerEmail = presences[gameState.currentPlayer]?.[0].email || 'Desconhecido';
-            const turnIndicator = document.createElement('p');
-            turnIndicator.className = 'text-center font-bold text-black pt-2';
-            turnIndicator.textContent = `É a vez de ${currentPlayerEmail}.`;
-            historyContainer.appendChild(turnIndicator);
+            // Adiciona a mensagem "É a vez de..."
+            if (gameState && gameState.currentPlayer) {
+                const currentPlayerEmail = presences[gameState.currentPlayer]?.[0].email || 'Desconhecido';
+                const turnIndicator = document.createElement('p');
+                turnIndicator.className = 'text-center font-bold text-black pt-2';
+                turnIndicator.textContent = `É a vez de ${currentPlayerEmail}.`;
+                historyContainer.appendChild(turnIndicator);
+            }
 
             // Rola para o final do histórico
             historyContainer.scrollTop = historyContainer.scrollHeight;
@@ -627,7 +629,7 @@
             document.getElementById('round-number').textContent = round;
 
             // 2. Área de Conteúdo
-            renderBidHistory(bidHistory, diceSVGTags);
+            renderBidHistory(bidHistory, diceSVGTags, gameState);
             const playersList = document.getElementById('game-players-list');
             playersList.innerHTML = '';
             gameState.turnOrder.forEach(playerId => {
