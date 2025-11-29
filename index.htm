@@ -601,6 +601,15 @@
                 lastBidDisplay.innerHTML = 'Nenhuma aposta ainda. Faça a primeira!';
             }
 
+            // Mostra o último lance
+            const lastBidDisplay = document.getElementById('last-bid-display');
+            if (currentBid) {
+                const bidderEmail = presences[gameState.lastBidder]?.[0].email || 'Alguém';
+                lastBidDisplay.innerHTML = `Última aposta por <strong>${bidderEmail}</strong>: ${currentBid.quantity} x ${diceSVGTags[currentBid.face]}`;
+            } else {
+                lastBidDisplay.innerHTML = 'Nenhuma aposta ainda. Faça a primeira!';
+            }
+
             // Habilita/desabilita ações com base no turno
             const isMyTurn = currentUser.id === currentPlayer;
             bidBtn.disabled = !isMyTurn;
@@ -796,6 +805,8 @@
             activeChannelId = channelId; // Define este como o canal ativo.
 
             currentRoomChannel = sb.channel(`room:${roomCode}`, { config: { presence: { key: currentUser.id } } });
+            // CORREÇÃO: Armazena o timestamp de criação para o "grace period".
+            currentRoomChannel.createdAt = Date.now();
 
             // CORREÇÃO: "Marca" o canal com seu ID único.
             currentRoomChannel.channelId = channelId;
@@ -811,15 +822,12 @@
 
             // NOVO: Ouvinte para quando o anfitrião fecha a sala intencionalmente
             currentRoomChannel.on('broadcast', { event: 'host_left_and_closed_room' }, ({ payload }) => {
-                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
                 showToast(payload.message || 'O anfitrião encerrou a sala.');
-                // Força a saída da sala e o retorno ao lobby
                 leaveRoomAndGoToLobby();
             });
 
 
             currentRoomChannel.on('presence', { event: 'sync' }, () => {
-                if (currentRoomChannel.channelId !== activeChannelId) return; // CORREÇÃO: Ignora eventos de canais antigos.
                 handlePresenceSync(currentRoomChannel.presenceState());
             });
 
@@ -834,8 +842,14 @@
 
                 const leavingPlayerId = key;
                 if (leavingPlayerId === currentRoom?.creator_id) {
-                    // Se o anfitrião sair inesperadamente, os clientes restantes limpam a sala
-                    // e voltam para o lobby para evitar ficarem presos.
+                     // CORREÇÃO: Implementa um "grace period" de 1.5 segundos.
+                    // Se um evento de desconexão do anfitrião chegar logo após a criação do canal,
+                    // ele é ignorado para evitar falsos positivos da condição de corrida.
+                    const channelAge = Date.now() - currentRoomChannel.createdAt;
+                    if (channelAge < 1500) {
+                        console.log(`Ignorando evento 'leave' do anfitrião devido ao grace period (${channelAge}ms).`);
+                        return;
+                    }
                     console.log('O anfitrião desconectou-se inesperadamente. Verificando a necessidade de limpeza.');
 
                     const remainingParticipantIds = Object.keys(currentRoomChannel.presenceState())
