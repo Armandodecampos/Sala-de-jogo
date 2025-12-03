@@ -207,10 +207,6 @@
                 <!-- A. Barra do Topo (FIXA NO TOPO) -->
                 <div id="top-bar" class="fixed top-0 left-0 w-full p-4 bg-gray-900 text-white border-b border-gray-700 shadow-lg z-30 flex justify-between items-center h-16">
                     <h2 class="text-xl font-bold">Rodada <span id="round-number">1</span></h2>
-                    <!-- A lista de jogadores agora é um status resumido -->
-                    <div id="game-players-list" class="flex gap-2 text-sm pr-8">
-                        <!-- Ex: Player1(4), Player2(5) -->
-                    </div>
                 </div>
 
                 <!-- B. Histórico de Jogadas (ÁREA SCROLLÁVEL NO MEIO) -->
@@ -282,10 +278,10 @@
     </div>
 
     <!-- #4: Modal de Configurações da Sala -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm relative">
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm relative overflow-y-auto max-h-full">
             <!-- Botão de Fechar -->
-            <button id="close-modal-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black">
+            <button id="close-modal-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black z-10">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -422,7 +418,6 @@
         const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
         // Novos Elementos da UI do Jogo (Estrutura V2)
         const roundNumberDisplay = document.getElementById('round-number'); // Movido
-        const gamePlayersList = document.getElementById('game-players-list'); // Movido/Restruturado
         const myDiceDisplay = document.getElementById('my-dice-display'); // Movido
         const historyMessages = document.getElementById('history-messages'); // Novo
         const historyContainer = document.getElementById('history-container'); // Novo para rolagem
@@ -631,18 +626,6 @@
 
             // 3. Atualiza a Barra do Topo
             roundNumberDisplay.textContent = round;
-            gamePlayersList.innerHTML = ''; // Lista resumida de jogadores
-            gameState.turnOrder.forEach(playerId => {
-                const player = players[playerId];
-                if (!player || player.diceCount <= 0) return;
-
-                const playerEmail = presences[playerId]?.[0].email.split('@')[0] || 'Desconhecido';
-                const isCurrent = playerId === currentPlayer;
-                const statusSpan = document.createElement('span');
-                statusSpan.className = `text-sm font-semibold p-1 rounded ${isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-white'}`;
-                statusSpan.textContent = `${playerEmail}(${player.diceCount})`;
-                gamePlayersList.appendChild(statusSpan);
-            });
 
             // 4. Atualiza o Histórico de Jogadas (Chat-like)
             historyMessages.innerHTML = '';
@@ -905,7 +888,7 @@
                         const isSelf = id === currentUser?.id;
 
                         const li = document.createElement('li');
-                        li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
+                        li.textContent = `${email}${isSelf ? ' (Você)' : ''}`;
                         if (isSelf) li.classList.add('font-bold');
                         modalParticipantsList.appendChild(li);
                     }
@@ -975,7 +958,7 @@
                             const isSelf = id === currentUser?.id;
 
                             const li = document.createElement('li');
-                            li.textContent = `${isHost ? '👑 ' : ''}${email}${isSelf ? ' (Você)' : ''}`;
+                            li.textContent = `${email}${isSelf ? ' (Você)' : ''}`;
                             if (isSelf) li.classList.add('font-bold');
                             list.appendChild(li);
                         }
