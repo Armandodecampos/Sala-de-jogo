@@ -30,6 +30,17 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Personalização da barra de rolagem para ficar mais sutil */
+        #history-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #history-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #history-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body id="page-body" class="bg-gray-50 text-black flex items-center justify-center min-h-screen">
@@ -154,11 +165,11 @@
         <!-- O CONTEÚDO DA SALA ABAIXO É REESTRUTURADO PARA O NOVO LAYOUT DE TELA CHEIA/JOGO -->
 
         <!-- #3: View da Sala (Dentro da Sala) -->
-        <!-- Flex-col e h-full para forçar o layout vertical e ocupar todo o espaço no modo full screen -->
+        <!-- "fixed" logic is handled inside game-view. room-view acts as a wrapper. -->
         <div id="room-view" class="hidden relative h-full flex flex-col"> 
             
             <!-- Ícone de Anfitrião (Coroa) - Mantido absoluto -->
-            <div id="host-icon" class="absolute top-0 left-0 mt-2 ml-2 text-yellow-500 hidden z-20" title="Você é o anfitrião da sala">
+            <div id="host-icon" class="absolute top-0 left-0 mt-2 ml-2 text-yellow-500 hidden z-50" title="Você é o anfitrião da sala">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 2a2 2 0 00-2 2v1.1a4 4 0 00-1 7.85V16a2 2 0 002 2h2a2 2 0 002-2v-3.05a4 4 0 00-1-7.85V4a2 2 0 00-2-2z" />
                     <path fill-rule="evenodd" d="M3 6a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
@@ -166,7 +177,7 @@
             </div>
             
             <!-- Botão de Engrenagem (Configurações) - Mantido absoluto -->
-            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-black transition duration-300 z-20">
+            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-white transition duration-300 z-50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -190,60 +201,67 @@
             </div>
             
             <!-- TELA DO JOGO (VISÍVEL APÓS INICIAR O JOGO) -->
-            <div id="game-view" class="hidden flex flex-col h-full">
+            <!-- Alterado para relativo e w-full para conter os elementos fixed corretamente -->
+            <div id="game-view" class="hidden h-full w-full relative bg-gray-100">
                 
-                <!-- A. Barra do Topo (Fixo: Rodada e Status do Jogo) -->
-                <div id="top-bar" class="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-700 shadow-lg z-10">
+                <!-- A. Barra do Topo (FIXA NO TOPO) -->
+                <div id="top-bar" class="fixed top-0 left-0 w-full p-4 bg-gray-900 text-white border-b border-gray-700 shadow-lg z-30 flex justify-between items-center h-16">
                     <h2 class="text-xl font-bold">Rodada <span id="round-number">1</span></h2>
-                    <!-- A lista de jogadores agora é um status resumido, que pode ser expandido no modal -->
-                    <div id="game-players-list" class="flex gap-2 text-sm">
+                    <!-- A lista de jogadores agora é um status resumido -->
+                    <div id="game-players-list" class="flex gap-2 text-sm pr-8">
                         <!-- Ex: Player1(4), Player2(5) -->
                     </div>
                 </div>
 
-                <!-- B. Histórico de Jogadas (Rolagem: Chat-like) -->
-                <div id="history-container" class="flex-1 overflow-y-auto p-4 bg-gray-100 flex flex-col justify-end">
-                    <div id="history-messages" class="space-y-3">
+                <!-- B. Histórico de Jogadas (ÁREA SCROLLÁVEL NO MEIO) -->
+                <!-- pt-16 (altura do topo) e pb-[280px] (altura estimada do rodapé fixo) -->
+                <div id="history-container" class="absolute inset-0 pt-20 pb-[280px] overflow-y-auto w-full px-4">
+                    <!-- Adicionado border-l-4 para criar a barra vertical -->
+                    <div id="history-messages" class="space-y-4 border-l-4 border-gray-300 ml-2 pl-4 min-h-full flex flex-col justify-end py-4">
                         <!-- Mensagens de Lance e Turno (Chat-like) vão aqui -->
                     </div>
                 </div>
                 
-                <!-- C. Área dos Dados do Jogador (Fixo) -->
-                <div id="my-dice-area-container" class="p-4 bg-gray-200 border-t border-gray-300 shadow-md z-10">
-                    <h3 class="font-bold mb-2 text-sm text-center">Seus Dados</h3>
-                    <div id="my-dice-display" class="flex justify-center items-center space-x-4 text-2xl h-10">
-                        <!-- Dados do Jogador (SVGs) -->
-                    </div>
-                </div>
-
-                <!-- D. Controles de Ação (Fixo: Botões de Aposta/Dúvida) -->
-                <div id="bottom-actions" class="p-4 bg-white border-t border-gray-300 shadow-xl z-10">
+                <!-- CONTAINER FIXO DO RODAPÉ (DADOS + AÇÕES) -->
+                <div id="bottom-panel" class="fixed bottom-0 left-0 w-full z-30 bg-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     
-                    <!-- Formulário de Lance (Inputs) -->
-                    <div id="bid-container" class="flex items-center justify-center gap-2 mb-4">
-                        <label for="bid-quantity" class="sr-only">Quantidade</label>
-                        <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded-lg text-center" />
-                        <label for="bid-face" class="sr-only">Face do Dado</label>
-                        <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded-lg">
-                                <option value="1">Dado 1</option>
-                                <option value="2">Dado 2</option>
-                                <option value="3">Dado 3</option>
-                                <option value="4">Dado 4</option>
-                                <option value="5">Dado 5</option>
-                                <option value="6">Dado 6</option>
-                        </select>
+                    <!-- C. Área dos Dados do Jogador -->
+                    <div id="my-dice-area-container" class="p-4 bg-gray-200 border-t border-gray-300">
+                        <h3 class="font-bold mb-2 text-sm text-center">Seus Dados</h3>
+                        <div id="my-dice-display" class="flex justify-center items-center space-x-4 text-2xl h-10">
+                            <!-- Dados do Jogador (SVGs) -->
+                        </div>
                     </div>
 
-                    <!-- Botões de Ações -->
-                    <div class="flex gap-2">
-                        <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md">Apostar</button>
-                        <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Duvidar</button>
-                        <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md" disabled>Confirmar</button>
+                    <!-- D. Controles de Ação -->
+                    <div id="bottom-actions" class="p-4 bg-white border-t border-gray-300 pb-safe">
+                        
+                        <!-- Formulário de Lance (Inputs) -->
+                        <div id="bid-container" class="flex items-center justify-center gap-2 mb-4">
+                            <label for="bid-quantity" class="sr-only">Quantidade</label>
+                            <input type="number" id="bid-quantity" min="1" value="1" class="w-20 bg-white border border-gray-300 text-black p-2 rounded-lg text-center font-bold text-lg" />
+                            <label for="bid-face" class="sr-only">Face do Dado</label>
+                            <select id="bid-face" class="w-24 bg-white border border-gray-300 text-black p-2 rounded-lg font-bold">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                            </select>
+                        </div>
+
+                        <!-- Botões de Ações -->
+                        <div class="flex gap-2">
+                            <button id="bid-btn" class="flex-1 bg-green-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md text-sm sm:text-base">Apostar</button>
+                            <button id="challenge-btn" class="flex-1 bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md text-sm sm:text-base" disabled>Duvidar</button>
+                            <button id="exact-btn" class="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md text-sm sm:text-base" disabled>Confirmar</button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Overlay de Resultado da Rodada -->
-                <div id="round-result-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex-col items-center justify-center hidden p-4 z-50">
+                <div id="round-result-overlay" class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center hidden p-4 z-50">
                     <h2 id="round-result-message" class="text-2xl font-bold mb-4 text-center"></h2>
                     <div id="all-dice-reveal" class="mb-4 p-4 border rounded-lg bg-gray-100 max-h-64 overflow-y-auto w-full max-w-sm">
                         <!-- Dados de todos os jogadores serão mostrados aqui -->
@@ -299,7 +317,7 @@
     </div>
 
     <!-- Notificação Toast -->
-    <div id="toast-notification" class="fixed bottom-5 right-5 bg-black text-white py-2 px-4 rounded-lg shadow-lg hidden transition-opacity duration-300">
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-black text-white py-2 px-4 rounded-lg shadow-lg hidden transition-opacity duration-300 z-[60]">
         <p id="toast-message"></p>
     </div>
 
@@ -628,38 +646,62 @@
 
             // 4. Atualiza o Histórico de Jogadas (Chat-like)
             historyMessages.innerHTML = '';
-            gameState.bidHistory.forEach(item => {
+            gameState.bidHistory.forEach((item, index) => {
+                // Wrapper relative para o ponto na linha
+                const msgWrapper = document.createElement('div');
+                msgWrapper.className = 'relative pl-2';
+
+                // Ponto na linha do tempo
+                const dot = document.createElement('div');
+                dot.className = `absolute -left-[25px] top-4 w-4 h-4 rounded-full border-2 border-white ${item.type === 'bid' ? 'bg-blue-500' : 'bg-gray-400'}`;
+                msgWrapper.appendChild(dot);
+                
                 const msgDiv = document.createElement('div');
                 if (item.type === 'bid') {
                     const bidderEmail = presences[item.playerId]?.[0].email.split('@')[0] || 'Jogador';
                     const isSelf = item.playerId === currentUser.id;
 
                     // Exemplo: Maria apostou 1 dado face 3
-                    msgDiv.className = `p-3 rounded-lg max-w-[80%] ${isSelf ? 'bg-green-200 self-end' : 'bg-white shadow-sm'}`;
+                    msgDiv.className = `p-3 rounded-lg w-full ${isSelf ? 'bg-blue-100 border border-blue-200' : 'bg-white shadow-sm border border-gray-200'}`;
                     
-                    const bidHtml = `<p class="text-sm font-semibold ${isSelf ? 'text-green-800' : 'text-black'}">${bidderEmail}:</p>
-                                    <div class="flex items-center gap-1">
+                    const bidHtml = `<p class="text-sm font-semibold ${isSelf ? 'text-blue-800' : 'text-gray-800'}">${bidderEmail}:</p>
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <span class="text-gray-600 text-sm">Apostou: </span>
                                         <span class="font-bold text-lg">${item.quantity} x</span>
                                         ${diceSVGTags[item.face]}
                                     </div>`;
                     msgDiv.innerHTML = bidHtml;
                 } else if (item.type === 'status') {
                     // Mensagem de status (início de jogo, fim de rodada)
-                    msgDiv.className = `text-xs text-center text-gray-500 italic w-full`;
+                    msgDiv.className = `text-xs text-gray-500 italic py-1`;
                     msgDiv.textContent = item.message;
                 }
-                historyMessages.appendChild(msgDiv);
+                msgWrapper.appendChild(msgDiv);
+                historyMessages.appendChild(msgWrapper);
             });
 
             // Adiciona a mensagem do turno atual (sempre a última mensagem)
             const currentPlayerEmail = presences[currentPlayer]?.[0].email.split('@')[0] || 'Desconhecido';
+            const turnWrapper = document.createElement('div');
+            turnWrapper.className = 'relative pl-2';
+            
+            // Ponto pulsante para o turno atual
+            const turnDot = document.createElement('div');
+            turnDot.className = `absolute -left-[25px] top-3 w-4 h-4 rounded-full bg-yellow-500 animate-pulse border-2 border-white`;
+            turnWrapper.appendChild(turnDot);
+
             const turnMsgDiv = document.createElement('div');
-            turnMsgDiv.className = `text-center p-2 rounded-lg bg-yellow-300 font-bold text-sm mt-2`;
+            turnMsgDiv.className = `p-3 rounded-lg bg-yellow-100 border border-yellow-300 font-bold text-sm text-center shadow-sm`;
             turnMsgDiv.textContent = `É a vez de ${currentPlayerEmail}`;
-            historyMessages.appendChild(turnMsgDiv);
+            
+            turnWrapper.appendChild(turnMsgDiv);
+            historyMessages.appendChild(turnWrapper);
 
             // Rola para o final do histórico (o novo turno)
-            historyContainer.scrollTop = historyContainer.scrollHeight;
+            // Timeout pequeno para garantir que o DOM atualizou
+            setTimeout(() => {
+                historyContainer.scrollTop = historyContainer.scrollHeight;
+            }, 50);
 
 
             // 5. Atualiza os dados do jogador atual
@@ -677,6 +719,17 @@
             bidBtn.disabled = !isMyTurn;
             challengeBtn.disabled = !isMyTurn || !currentBid; // Só pode desafiar se houver um lance
             exactBtn.disabled = !isMyTurn || !currentBid;
+            
+            // Visual feedback for disabled buttons
+            [bidBtn, challengeBtn, exactBtn].forEach(btn => {
+                if (btn.disabled) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.classList.remove('hover:scale-105', 'shadow-md');
+                } else {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('hover:scale-105', 'shadow-md');
+                }
+            });
         }
 
         /**
