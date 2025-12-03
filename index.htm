@@ -27,6 +27,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Animação de rotação dos dados */
+        @keyframes dice-roll {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.2);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+        .dice-roll-animation {
+            animation: dice-roll 0.5s ease-out;
+        }
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -315,6 +330,9 @@
         <p id="toast-message"></p>
     </div>
 
+    <!-- Elemento de áudio para o som dos dados -->
+    <audio id="dice-sound" src="URL_DO_SEU_SOM_AQUI.mp3" preload="auto"></audio>
+
     <script>
         // --- 1. LÓGICA DE ESTADO DE JOGO ---
         /**
@@ -578,6 +596,7 @@
                 5: '<svg class="w-8 h-8"><use href="#dice-5"></use></svg>',
                 6: '<svg class="w-8 h-8"><use href="#dice-6"></use></svg>',
             };
+            const diceSound = document.getElementById('dice-sound');
 
             // 1. Overlay de Fim de Jogo
             const gameOverOverlay = document.getElementById('game-over-overlay');
@@ -686,9 +705,24 @@
             // 5. Atualiza os dados do jogador atual
             myDiceDisplay.innerHTML = '';
             if (myPlayerState) {
+                // A animação e o som devem ocorrer apenas quando os dados são "rolados",
+                // ou seja, no início de uma nova rodada (quando o turno é 1).
+                const isNewRound = gameState.turn === 1;
+
+                // Toca o som dos dados se for uma nova rodada e a URL do som for válida.
+                if (isNewRound && diceSound && !diceSound.src.includes('URL_DO_SEU_SOM_AQUI')) {
+                    diceSound.play().catch(e => console.error("Erro ao tocar som:", e));
+                }
+
                 myPlayerState.dice.forEach(d => {
                     const dieDiv = document.createElement('div');
-                    dieDiv.innerHTML = diceSVGTags[d];
+                    // Define as classes do SVG: sempre maiores, mas animados apenas em uma nova rodada.
+                    const svgClass = isNewRound
+                        ? 'w-12 h-12 dice-roll-animation' // Grande e animado.
+                        : 'w-12 h-12';                   // Apenas grande.
+
+                    // Substitui a classe original pela nova para aumentar o tamanho e animar.
+                    dieDiv.innerHTML = diceSVGTags[d].replace('class="w-8 h-8"', `class="${svgClass}"`);
                     myDiceDisplay.appendChild(dieDiv);
                 });
             }
