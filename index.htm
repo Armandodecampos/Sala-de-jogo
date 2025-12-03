@@ -168,16 +168,8 @@
         <!-- "fixed" logic is handled inside game-view. room-view acts as a wrapper. -->
         <div id="room-view" class="hidden relative h-full flex flex-col"> 
             
-            <!-- Ícone de Anfitrião (Coroa) - Mantido absoluto -->
-            <div id="host-icon" class="absolute top-0 left-0 mt-2 ml-2 text-yellow-500 hidden z-50" title="Você é o anfitrião da sala">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 2a2 2 0 00-2 2v1.1a4 4 0 00-1 7.85V16a2 2 0 002 2h2a2 2 0 002-2v-3.05a4 4 0 00-1-7.85V4a2 2 0 00-2-2z" />
-                    <path fill-rule="evenodd" d="M3 6a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            
-            <!-- Botão de Engrenagem (Configurações) - Mantido absoluto -->
-            <button id="settings-btn" class="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-white transition duration-300 z-50">
+            <!-- Botão de Engrenagem (Configurações) - Mantido fixo -->
+            <button id="settings-btn" class="fixed top-4 right-4 text-gray-500 hover:text-black transition duration-300 z-50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -294,8 +286,14 @@
                 <p id="modal-room-code" class="text-2xl font-mono text-black"></p>
             </div>
 
+            <!-- Anfitrião -->
+            <div id="modal-host-info" class="mb-4">
+                <p class="text-gray-600">Anfitrião:</p>
+                <p id="modal-host-name" class="text-black font-bold"></p>
+            </div>
+
             <!-- Jogadores -->
-            <div class="mb-6">
+            <div id="modal-players-info" class="mb-6">
                 <p class="text-gray-600">Jogadores:</p>
                 <ul id="modal-participants-list" class="text-black list-disc list-inside space-y-1 mt-1">
                     <!-- Lista de jogadores no modal -->
@@ -394,7 +392,6 @@
         const mainTitle = document.getElementById('main-title');
         const roomCodeTitle = document.getElementById('room-code-title');
         const participantsTitle = document.getElementById('participants-title');
-        const hostIcon = document.getElementById('host-icon');
         const lobbyWaitContent = document.getElementById('lobby-wait-content'); // Novo
         // Referência da Notificação Toast
         const toastNotification = document.getElementById('toast-notification');
@@ -404,6 +401,7 @@
         const settingsModal = document.getElementById('settings-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const modalRoomCode = document.getElementById('modal-room-code');
+        const modalHostName = document.getElementById('modal-host-name');
         const modalParticipantsList = document.getElementById('modal-participants-list');
         const modalLogoutBtn = document.getElementById('modal-logout-btn');
         // Referências dos Controles do Anfitrião no Modal
@@ -481,8 +479,6 @@
             if (!currentRoom || !currentUser) return;
 
             const isHost = currentUser.id === currentRoom.creator_id;
-            // Mostra ou esconde o ícone de coroa se o jogador for o anfitrião.
-            hostIcon.classList.toggle('hidden', !isHost);
 
             // Controla a visibilidade dos elementos com base no estado do jogo
             const showLobby = !gameStarted;
@@ -876,15 +872,29 @@
         function openSettingsModal() {
             modalRoomCode.textContent = currentRoom.room_code;
             modalParticipantsList.innerHTML = '';
-            
-            // Renderiza a lista de participantes no modal
+            modalHostName.textContent = '';
+
             const participantIds = Object.keys(presences);
-            if (participantIds.length > 0) {
-                participantIds.forEach(id => {
+            const hostId = currentRoom?.creator_id;
+
+            // Encontra e exibe o anfitrião
+            const hostPresence = presences[hostId];
+            if (hostPresence && hostPresence.length > 0) {
+                const hostEmail = hostPresence[0].email || 'Anfitrião anônimo';
+                const isSelf = hostId === currentUser?.id;
+                modalHostName.textContent = `${hostEmail}${isSelf ? ' (Você)' : ''}`;
+            } else {
+                modalHostName.textContent = 'Anfitrião não encontrado';
+            }
+
+            // Filtra e exibe os outros jogadores
+            const otherPlayers = participantIds.filter(id => id !== hostId);
+            if (otherPlayers.length > 0) {
+                document.getElementById('modal-players-info').classList.remove('hidden');
+                otherPlayers.forEach(id => {
                     const presencesForId = presences[id];
                     if (presencesForId.length > 0) {
                         const email = presencesForId[0].email || 'Usuário anônimo';
-                        const isHost = id === currentRoom?.creator_id;
                         const isSelf = id === currentUser?.id;
 
                         const li = document.createElement('li');
@@ -894,7 +904,9 @@
                     }
                 });
             } else {
-                modalParticipantsList.innerHTML = '<li class="text-gray-500">Ninguém aqui ainda...</li>';
+                // Opcional: esconde a seção de jogadores se não houver outros
+                document.getElementById('modal-players-info').classList.add('hidden');
+                modalParticipantsList.innerHTML = '<li class="text-gray-500">Nenhum outro jogador na sala.</li>';
             }
 
 
